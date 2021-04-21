@@ -1,0 +1,67 @@
+\documentclass{article}
+
+\usepackage{amsthm}
+\newtheorem{pro}{Proposal}
+\newtheorem{defi}{Definition}
+\newtheorem{thm}{Theorem}
+
+\usepackage[utf8]{inputenc} 		% encodage des caracteres utilise (pour les caracteres accentues) -- non utilise ici.
+%\usepackage[latin1]{inputenc} 		% autre encodage
+\usepackage[french]{babel}		% pour une mise en forme "francaise"
+\usepackage{amsmath,amssymb,amsthm}	% pour les maths
+\usepackage{graphicx}			% pour inclure des graphiques
+\usepackage{hyperref}			% si vous souhaitez que les references soient des hyperliens
+\usepackage{color}			% pour ajouter des couleurs dans vos textes
+
+
+\def \R {\mathbb R}					% definit un nouveau mot cle LateX. Ici, \R designera l'ensemble des reels
+\newcommand \fonctionsContinues[2] {C^0(#1,#2)}		% Une nouvelle commande avec un argument
+
+
+\title{Implementing the Core Chase for the Description Logic ALC}
+\author{Maël Abily}	% pour les accents, on peut soit preciser l'encodage et utiliser des caracteres accentues, soit utilise \'e pour un e accent aigu, \`e pour un e accent grave, etc...
+
+\begin{document}
+\maketitle						% Genere le titre
+
+%\tableofcontents					% si on veut une table des matieres
+
+
+
+\section{Introduction}
+
+\begin{defi} We define a \underline{first-order language} as a set of constants (often noted a,b,c,$c_{1}$,...), predicates (P,Q,R,$P_{1}$,...) and variables (x,y,$x_{1}$,...). \\
+A \underline{term} is a variable or a constant (often noted t,$t_{1}$,...).
+We note \underline{Ar(P)} the arity of P. \\
+$P(t_{1},...,t_{n})$ is an \underline{atom}. \\
+A \underline{fact} is a variable-free atom. \\
+A \underline{factbase} F := $\exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1}),...,P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ is a existentially quantified conjunctions of atoms which is closed (it means that every variable of F is quantified). \underline{var(F)} (respectively \underline{cst(F)} and \underline{term(F)} is the set of variables (resp. constants and terms) that occur in F.
+\end{defi}
+
+\textbf{Remark} We will often see factbases as sets of atoms. For example, the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ can be represented by $\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.
+
+\begin{defi}
+A \underline{substitution} $\sigma:X \to Terms$ is a function where X is a set of variables. For example $\{x \mapsto z, y \mapsto a \}$ is a substitution from \{x,y\} to Terms. \\
+A \underline{homomorphism} from F to F' is a substitution $\sigma:var(F) \to term(F')$ where $\sigma(F) \subseteq F'$
+\end{defi}
+\begin{pro}
+A factbase F entails a factbase F' (often noted F $\to F'$) $\Leftrightarrow$ there exists a homomorphism from F' to F. \\
+For example, F = \{P(b,a),Q(x)\} entails F' = \{P(x,a)\} thanks to the homomorphism $\{x \mapsto b\}$ 
+\end{pro}
+
+\begin{defi}
+An \underline{isomorphism} is a bijective homomorphism. \\
+A subset F' $\subseteq F$ is a \underline{retract} of F if there exists a subsitution $\sigma$ such that $\sigma(F) = F'$ and $\sigma_{|F'}=id$ ($\sigma$ is called a retractation from F to F'. \\
+A factbase is a \underline{core} if its strict subset are not retracts. \\
+A core of a factbase F is a minimal subset of F that is a core.
+\end{defi}
+
+\begin{pro}
+A factbase F is a core $\Leftrightarrow$ every homomorphism $\sigma: F \to F$ is a bijection.
+\end{pro}
+
+\textbf{Example of core}
+
+
+\end{document}
+
