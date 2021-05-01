@@ -35,10 +35,10 @@ A \underline{term} is a variable or a constant (often noted t,$t_{1}$,...).
 We note \underline{Ar(P)} the arity of P. \\
 $P(t_{1},...,t_{n})$ is an \underline{atom}. \\
 A \underline{fact} is a variable-free atom. \\
-A \underline{factbase} F := $\exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1}),...,P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ is a existentially quantified conjunctions of atoms which is closed (it means that every variable of F is quantified). \underline{var(F)} (respectively \underline{cst(F)} and \underline{term(F)} is the set of variables (resp. constants and terms) that occur in F.
+A \underline{factbase} F := $\exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1})\land ...\land P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ is a existentially quantified conjunctions of atoms which is closed (it means that every variable of F is quantified). \underline{var(F)} (respectively \underline{cst(F)} and \underline{term(F)} is the set of variables (resp. constants and terms) that occur in F.
 \end{defi}
-
-\textbf{Remark} We will often see factbases as sets of atoms. For example, the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ can be represented by $\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.
+\noindent \textbf{Remark} We will often see factbases as sets of atoms. For example, the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ can be represented by \\
+$\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.
 
 \begin{defi}
 A \underline{substitution} $\sigma:X \to Terms$ is a function where X is a set of variables. For example $\{x \mapsto z, y \mapsto a \}$ is a substitution from \{x,y\} to Terms. \\
@@ -51,17 +51,46 @@ For example, F = \{P(b,a),Q(x)\} entails F' = \{P(x,a)\} thanks to the homomorph
 
 \begin{defi}
 An \underline{isomorphism} is a bijective homomorphism. \\
-A subset F' $\subseteq F$ is a \underline{retract} of F if there exists a subsitution $\sigma$ such that $\sigma(F) = F'$ and $\sigma_{|F'}=id$ ($\sigma$ is called a retractation from F to F'. \\
+A subset F' $\subseteq F$ is a \underline{retract} of F if there exists a subsitution $\sigma$ such that $\sigma(F) = F'$ and $\sigma_{|F'}=id$ ($\sigma$ is called a \underline{retractation} from F to F'). \\
 A factbase is a \underline{core} if its strict subset are not retracts. \\
-A core of a factbase F is a minimal subset of F that is a core.
+A \underline{core} of a factbase F is a minimal subset of F that is a core.
 \end{defi}
 
 \begin{pro}
 A factbase F is a core $\Leftrightarrow$ every homomorphism $\sigma: F \to F$ is a bijection.
 \end{pro}
 
-\textbf{Example of core}
+\noindent \textbf{Example} F = $\{R(a,x)\}$ is the core of F' = $\{R(a,x),R(y,z)\}$
+
+\begin{defi}
+An \underline{(existential) rule} R is a first-order formula	 of the form : $\forall \vec x.\forall \vec y. A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$ where  A and B are conjonctions of atoms. We define \underline{body(R)} = A, \underline{head(R)} = B and the frontier of R \underline{fr(R)} = $\vec x$ (the set of variables shared by the body and the head of R). \\
+An \underline{ontology} O is a pair (T,F) where T is a set of existential rules and F is a factbase.
+\end{defi}
+
+\begin{defi}
+Let T be a ruleset, $\alpha$ be a rule, $\sigma$ be a subsitution and F be a factbase. \\
+The tuple $(\alpha,\sigma)$ is a \underline{trigger} for F if : 
+\begin{itemize}
+\item the domain of $\sigma$ is the set of all variables occurring in Body($\alpha$).
+\item $\sigma(Body(\alpha)) \subseteq F$.
+\item For all $\hat \sigma$ which extends $\sigma$ and has its domain equals to the set of all variables occurring in Body($\alpha$) and Head($\alpha$) ,$\hat \sigma(Head(\alpha)) \nsubseteq F$
+\end{itemize}
+\underline{$Tr_{\alpha}(F)$} is the set of all trigers $(\alpha,\sigma)$ for F. \\
+\underline{$Tr_{T}(F)$} is the set of all trigers for F. \\
+The rule $\alpha$ is \underline{satisfied} by F if $Tr_{\alpha}(F)$ = $\O$. \\
+T is \underline{satisfied} by F if $Tr_{T}(F)$ = $\O$.
+\end{defi}
+
+\noindent \textbf{Example} If $\alpha = A(x,y) \rightarrow B(x,z)$, F = $\{A(b,c)\}$ and $\sigma = \{x \mapsto b, y \mapsto c \}$ then $(\alpha,\sigma)$ is a trigger for F.
+
+\begin{defi}
+a ruleset T is \underline{satisfied} by a factbase M if every rule of T is satisfied by M. \\
+A factset M is a \underline{model} for an ontology O = (T,F) if $F \subset M$ and T is satisfied by M. \\
+A \underline{Boolean conjunctive query (BCQ)} is a closed formula of the form \\ $\exists x_1,...,x_n. F(x_1,...,x_n)$ where F is a conjunction of atoms. \\
+A fact set F \underline{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $F \vDash B$) if there exists a substitution $\sigma$ such that $\sigma(B) \subset F$. An ontology O \underline{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $O \vDash B$) if for every model M of O, $M \vDash B$.\\
+A model U for an ontology O is \underline{universal} if for
+every model M of O, there exists an homomorphism $h : U \to M$.
+\end{defi}
 
 
 \end{document}
-
