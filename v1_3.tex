@@ -1,0 +1,136 @@
+\documentclass{article}
+
+\usepackage{amsthm}
+\theoremstyle{proposal}
+\newtheorem{proposal}{Proposal}[section]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\theoremstyle{theorem}
+\newtheorem{theorem}{Theorem}[section]
+
+\usepackage[utf8]{inputenc} 		% encodage des caracteres utilise (pour les caracteres accentues) -- non utilise ici.
+%\usepackage[latin1]{inputenc} 		% autre encodage
+\usepackage[french]{babel}		% pour une mise en forme "francaise"
+\usepackage{amsmath,amssymb,amsthm}	% pour les maths
+\usepackage{graphicx}			% pour inclure des graphiques
+\usepackage{hyperref}			% si vous souhaitez que les references soient des hyperliens
+\usepackage{color}			% pour ajouter des couleurs dans vos textes
+\usepackage{todonotes}
+
+\def \N {\mathbb N}	
+\def \R {\mathbb R}					% definit un nouveau mot cle LateX. Ici, \R designera l'ensemble des reels
+\newcommand \fonctionsContinues[2] {C^0(#1,#2)}		% Une nouvelle commande avec un argument
+
+
+\title{Implementing the Core Chase for the Description Logic ALC}
+\author{Maël Abily}	% pour les accents, on peut soit preciser l'encodage et utiliser des caracteres accentues, soit utilise \'e pour un e accent aigu, \`e pour un e accent grave, etc...
+
+\begin{document}
+\maketitle						% Genere le titre
+
+%\tableofcontents					% si on veut une table des matieres
+
+I modified : definition of atom, the first remark, definition 2 and 3 (including the definition of core),exemple of core, proof of proposal 1.2, the def of $Tr_{T}(F)$, the last exemple and the def of universal model.
+
+\section{Introduction}
+
+\begin{definition} We define a \emph{first-order language} as a set of constants (often noted a,b,c,$c_{1}$,...), predicates (P,Q,R,$P_{1}$,...) and variables (x,y,$x_{1}$,...). A \emph{term} is a variable or a constant (often noted t,$t_{1}$,...). We note \emph{Ar(P)} the arity of the predicate P. If $t_1,...,t_n$ are \textit{Terms} and P is a predicate, $P(t_{1},...,t_{n})$ is an \emph{atom}. A \emph{fact} is a variable-free atom. Let $t_i^j$ be \textit{Terms} and $P_i$ be predicates. A \emph{factbase} F := $\exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1})\land ...\land P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ is an existentially quantified conjunctions of atoms which is closed (it means that every variable of F is quantified). \emph{var(F)} (respectively \emph{cst(F)} and \emph{term(F)} is the set of variables (resp. constants and \textit{Terms}) that occur in F.
+\end{definition}
+\noindent \textbf{Remark} We identify factbases as sets of atoms. For example, the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ is represented by \\
+$\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.
+
+\begin{definition}
+A \emph{substitution} $\sigma:X \to \textit{Terms}$\todo{Use the latex command textit around \textit{Terms}.}\ is a function where X is a set of variables. For example $\{x \mapsto z, y \mapsto a \}$ is a substitution from \{x,y\} to \textit{Terms}. We define $\overline{\sigma}:\{$Factbases F where var(F) $\subseteq X\} \to \textit{Terms}$ :
+\begin{itemize}
+\item if x $\in X$, $\overline{\sigma}(x) = \sigma(x)$;
+\item if c is a constant, $\overline{\sigma}(c) = c$;
+\item if $P(t_{1},...,t_{n})$ is an atom in F and $t_1,...,t_n$ are variables in X or are constants $\overline{\sigma}(P(t_{1},...,t_{n})) = P(\overline{\sigma}(t_{1}),...,\overline{\sigma}(t_{n}))$ ;
+\item if $A_{1},...,A_{n}$ are atoms in F, $\overline{\sigma}(\{A_{1},...,A_{n}\}) = \{\overline{\sigma}(A_{1}),...,\overline{\sigma}(A_{n})\}$.
+\end{itemize}
+Let F and F' be two factbases. A \emph{homomorphism} from F to F' is a substitution $\sigma:var(F) \to term(F')$ where $\overline{\sigma}(F) \subseteq F'$. 
+\end{definition}
+\noindent \textbf{Remark} We identify $\overline{\sigma}$ with $\sigma$.
+\begin{definition}
+A factbase F \emph{entails} a factbase F' (often noted F $\models F'$) if there exists a homomorphism from F' to F. For example, F = \{P(b,a),Q(x)\} entails F' = \{P(x,a)\} due to the homomorphism $\{x \mapsto b\}$ 
+\end{definition}
+
+\begin{definition}
+$id_{|F}$ is the substitution identity defined by : for all variable x $\in var(F)$, $id(x) = x$. An \emph{isomorphism} h is a bijective homomorphism. \todo{This definition is incomplete. (I don't see what is missing)} A subset F' $\subseteq F$ is a \emph{retract} of F if there exists a subsitution $\sigma$ such that $\sigma(F) = F'$ and $\sigma_{|F'}=id_{|F'}$ ($\sigma$ is called a \emph{retractation} from F to F'). A factbase is a \emph{core} if all of its strict subsets are not retracts. A \emph{core} of a factbase F is a minimal retract of F that is a core.
+\end{definition}
+
+\noindent \textbf{Example} F = $\{R(a,x)\}$ is the core of F' = $\{R(a,x),R(y,z)\}$ because : \\
+$\bullet$ $F \subseteq F'$;\\
+$\bullet$ $\{x \mapsto x, y \mapsto a, z \mapsto x\}$ is a retractation from F' to F;\\
+$\bullet$ F is minimal because card(F) = 1 and $\o$ is not a retract of F';\\
+$\bullet$ F is a core because $\o$ is not a retract of F' ;
+
+\todo{Explain why; look for a more interesting example.}
+
+
+\begin{proposal}
+A factbase F is a core $\Leftrightarrow$ every homomorphism $\sigma: F \to F$ is a bijection.
+\end{proposal}
+
+\noindent \textbf{Proof} We show it by double-implication. \\
+$\boxed{\Leftarrow}$ By contraposition, suppose that the factbase F is not a core : there exists a strict substet F' of F such that F' is a retract of F. There exists a homomorphism $\sigma:F \to F$ such that $\sigma(F) = F'$. As $F' \subsetneq F$, $\sigma$ is not surjective, so it is not a bijection. \\
+$\boxed{\Rightarrow}$ Conversely, by contraposition, suppose that there exists an homomorphism $\sigma_1$ not bijective. As F is finite, $\sigma_1$ is not surjective. We pose F' = $\sigma_1(F)\subsetneq F$ and we pose $\sigma_2:F \to F$ such that for $x \in F'$, $\sigma_2(x) = x$ and for $x \notin F'$, $\sigma_2(x) = \sigma_1(x)$. We have ${\sigma_2}_{|F'} = id_{|F'}$ and $\sigma_2(F) = F'$. So $\sigma_2$ is a retractation from F to F' and so F' is a strict retract of F. Consequently F is not a core. It concludes the proof.
+
+
+
+\begin{definition}
+Let $\vec x$, $\vec y$ and $\vec z$ be tuple of variables. An \emph{(existential) rule} R is a first-order formula	 of the form  $\forall \vec x.\forall \vec y. A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$\ where  A and B are conjunctions of atoms. We define \emph{body(R)} = A, \emph{head(R)} = B and the frontier of R \emph{fr(R)} = $\vec x$ (the set of variables shared by the body and the head of R). 
+
+An \emph{ontology} O is a pair (T,F) where T is a set of existential rules and F is a factbase.
+\end{definition}
+
+\begin{definition}
+Let T be a ruleset, $\alpha$ be a rule, $\sigma$ be a subsitution and F be a factbase. The tuple $(\alpha,\sigma)$ is a \emph{trigger} for F if : 
+\begin{itemize}
+\item the domain of $\sigma$ is the set of all variables occurring in Body($\alpha$).
+\item $\sigma(Body(\alpha)) \subseteq F$.
+\item For all $\hat \sigma$ which extends $\sigma$ and has its domain equals to the set of all variables occurring in Body($\alpha$) and Head($\alpha$) ,$\hat \sigma(Head(\alpha)) \nsubseteq F$
+\end{itemize}
+\emph{$Tr_{\alpha}(F)$} is the set of all trigers $(\alpha,\sigma)$ for F. \emph{$Tr_{T}(F)$} is the set of all trigers $(\alpha,\sigma)$ for F where $\alpha \in T$ and $\sigma$ is a substitution. The rule $\alpha$ is \emph{satisfied} by F if $Tr_{\alpha}(F)$ = $\O$. T is \emph{satisfied} by F if $Tr_{T}(F)$ = $\O$.
+\end{definition}
+
+\noindent \textbf{Example} If $\alpha = A(x,y) \rightarrow \exists z.B(x,z)$, F = $\{A(b,c)\}$ and $\sigma = \{x \mapsto b, y \mapsto c \}$ then $(\alpha,\sigma)$ is a trigger for F.
+
+\begin{definition}
+a ruleset T is \emph{satisfied} by a factbase M if every rule of T is satisfied by M. A factset M is a \emph{model} for an ontology O = (T,F) if $F \subseteq M$ and T is satisfied by M. A \emph{Boolean conjunctive query (BCQ)} is a closed formula of the form \\ $\exists x_1,...,x_n. F(x_1,...,x_n)$ where F is a conjunction of atoms. A fact set F \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $F \vDash B$) if there exists a substitution $\sigma$ such that $\sigma(B) \subseteq F$. An ontology O \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $O \vDash B$) if for every model M of O, $M \vDash B$. A model U for an ontology O is \emph{universal} if for
+every model M of O, there exists a\todo{Write a instead.}\ homomorphism $h : U \to M$ \textbf{(is the def correct ? because $\o$ is always universal)} .
+\end{definition}
+
+\noindent \textbf{Example} We pose O = $(\{\alpha\},\{F\})$ where $\alpha = A(x,y) \rightarrow \exists z.A(x,z)$ and F = $\{A(b,c)\}$. We pose U =
+
+\begin{definition}
+Let $\alpha$ be an axiom and F be a factbase. For a trigger $(\alpha,\sigma) \in Tr_\alpha(F)$, the \emph{application} of $(\alpha,\sigma)$ to F is $App_{(\alpha,\sigma)}(F) = F\cup \hat \sigma(Head(\alpha))$ where $\hat \sigma$ extends $\sigma$ and for all $y \notin var(\sigma), \hat \sigma(y) = z_{(\alpha,\sigma)}$ where $z_{(\alpha,\sigma)}$ is a new variable. We pose $App_{\alpha}(F) = \cup_{(\alpha,\sigma) \in Tr_\alpha(F)}App_{(\alpha,\sigma)}(F)$ and $App_{T}(F) = \cup_{\alpha \in T}App_{\alpha}(F)$.
+
+\end{definition} 
+
+\noindent \textbf{Remark} Let $\prec$ be a strict partial order over the set of variables.
+
+\begin{definition} \textbf{why do the article only deals with relations of degree one or two ?} \\
+A variable x occuring in a factbase F is \emph{superfluous} if there exists two variables y and z such that for all predicate P, ... \\ \\
+The \emph{pruning sequence} of a factbase F is the sequence $(F_i)_{i \in \{1,...,n\}}$ of factbases where :
+\begin{itemize}
+\item $F_1 = F$;
+\item for all $i \in \{2,...,n\}$, ...
+\item $F_n$ does not contain any superfluous variables.
+\end{itemize}
+We pose \emph{prune(F)} = $F_n$.
+
+\end{definition} 
+
+\begin{definition} 
+A \emph{core chase sequence} for a ruleset T is a sequence $(F_n)_{n \in \N}$ of factbases where : 
+\begin{itemize}
+\item $F_0 = F$;
+\item for all odd numbers $i \in \N^*$, $F_i = App_T(F_{i-1})$.
+\item for all even numbers $i \in \N^*$, $F_i = Prune(F_{i-1})$.
+\end{itemize}
+The core chase \emph{terminates} on T if there exits $i \in \N$ such that $F_{i+1} = F_i$. In this case, we pose \emph{Core(T)} = $F_i$.
+\end{definition} 
+
+
+
+\end{document}
