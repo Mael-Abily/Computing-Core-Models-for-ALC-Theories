@@ -46,15 +46,17 @@ The goal is to answer a query with a given database and a given set of rules by 
 
 \subsection{Syntax}
 
-\begin{definition}[First-order language, constants, predicates, variables, terms, arity, atoms, facts, factbases] We define a \emph{first-order language} as a set of constants (often noted $a,b,c,c_{1},...)$, predicates $(P,Q,R,P_{1},...)$, variables $(x,y,x_{1},...)$ and nulls which are particular variables. A \emph{term}  (often noted $t,t_{1},...)$ is a variable or a constant. We note \emph{Ar(P)} the arity of the predicate $P$. If $t_1,...,t_n$ are terms and $P$ is a predicate where $Ar(P) = n$, $P(t_{1},...,t_{n})$ is an \emph{atom}. A \emph{fact} is a variable-free atom. Let $t_i^j$ be Terms and $P_i$ be predicates. A \emph{factbase} $F := \exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1})\land ...\land P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ is an existentially quantified conjunctions of atoms which is closed (it means that every variable of F is quantified). \emph{var(F)} (respectively \emph{cst(F)}, \emph{nulls(F)} and \emph{term(F)}) is the set of variables (resp. constants, nulls and terms) that occur in $F$. \emph{var} (respectively \emph{cst}, \emph{null} and \emph{terms}) is the set of variables (resp. constants, nulls and terms). \emph{Factbases} is the set of factbases.
+\begin{definition}[First-order language, constants, predicates, variables, terms, arity, atoms, facts, factbases] We define a \emph{first-order language} as a set of constants (often noted $a,b,c,c_{1},...)$, predicates $(P,Q,R,P_{1},...)$, variables $(x,y,x_{1},...)$ and nulls which are particular variables.\todo{Discuss: is it really necessary to differentiate nulls and variables?}\ A \emph{term}  (often noted $t,t_{1},...)$ is a variable or a constant. We note \emph{Ar(P)} the arity of the predicate $P$. \todo{We write \emph{$\textit{Ar}(P)$} to denote the arity of the predicate $P$.}
+	\todo{Note the use of textit and \$ in the previous comment.}
+ If $t_1,...,t_n$ are terms and $P$ is a predicate where $Ar(P) = n$, \todo{then} $P(t_{1},...,t_{n})$ is an \emph{atom}. A \emph{fact} is a variable-free atom. Let $t_i^j$ be Terms and $P_i$ be predicates. A \emph{factbase} $F := \exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1})\land ...\land P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ is an existentially quantified conjunctions\todo{Use singular here.}\ of atoms which\todo{Discuss: use ``that'' here.}\ is closed (it means that\todo{Use ``that is''.}\ every variable of F is quantified). \emph{var(F)} (respectively \emph{cst(F)}, \emph{nulls(F)} and \emph{term(F)}) is the set of variables (resp. constants, nulls and terms) that occur in $F$.\todo{Discuss: define these functions in a more general way so they can apply to e.g. rules, rule sets, atoms, etc} \emph{var} (respectively \emph{cst}, \emph{null} and \emph{terms}) is the set of variables (resp. constants, nulls and terms). \emph{Factbases} is the set of factbases.\todo{Use a different symbol (and not a word) to represent the set of all factbases.}
 \end{definition}
 
 \begin{remark} 
-\emph{nulls} $\subseteq$ \emph{var}. \emph{var} and \emph{cst} are disjoints.
+\emph{nulls} $\subseteq$ \emph{var}. \emph{var} and \emph{cst} are disjoints.\todo{Use something else to represent this sets. E.g., $\mathsf{Vars}$.}
 \end{remark}
 
-\begin{remark} We identify factbases as sets of atoms. For example, the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ is represented by
-$\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.
+\begin{remark} We identify factbases as sets of atoms.\todo{``identify with'' instead of ``identify as''}\ For example, the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ is represented by
+$\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.\todo{E.g., we identify the factbase $X$ with the set $Y$.}
 \end{remark}
 
 \begin{definition}[Substitution, homomorphism]
@@ -68,7 +70,8 @@ We define $\sigma_2:\{$Factbases $F$ where \emph{var(F)} $\subseteq X\} \to \tex
 \item if $P(t_{1},...,t_{n})$ is an atom in $F$ and $t_1,...,t_n$ are variables in $X$ or are constants $\sigma_2(\{P(t_{1},...,t_{n})\}) = \{P(\sigma_1(t_{1}),...,\sigma_1(t_{n}))\}$ ;
 \item if $A_{1},...,A_{n}$ are atoms in $F$, $\sigma_2(\{A_{1},...,A_{n}\}) = \{\sigma_2(\{A_{1}\}),...,\sigma_2(\{A_{n}\})\}$.
 \end{itemize}
-Let $F$ and $F'$ be two factbases. A \emph{homomorphism} from $F$ to $F'$ is a substitution $\sigma:var(F) \to term(F')$ where $\sigma_2(F) \subseteq F'$. 
+Let $F$ and $F'$ be two factbases. A \emph{homomorphism} from $F$ to $F'$ is a substitution $\sigma:var(F) \to term(F')$ where $\sigma_2(F) \subseteq F'$.
+\todo{Discuss: I believe that these definitions can be simplified to an extent.}
 \end{definition}
 
 \begin{remark}
@@ -76,14 +79,14 @@ We identify $\sigma_2$ with $\sigma$.
 \end{remark}
 
 \begin{definition}[Existential rule, ontology]
-Let $\vec x$, $\vec y$ and $\vec z$ be tuple of variables. An \emph{(existential) rule} $R$ is a first-order formula	 of the form  $\forall \vec x.\forall \vec y. A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$\ where  $A$ and $B$ are conjunctions of atoms. We define \emph{body($R$)} = $A$, \emph{head($R$)} = $B$ and the frontier of $R$ \emph{fr($R$)} = $\vec x$ (the set of variables shared by the body and the head of $R$). An \emph{ontology} $O$ is a pair $(T,F)$ where $T$ is a set of existential rules and $F$ is a factbase.
+Let $\vec x$, $\vec y$ and $\vec z$ be tuple of variables.\todo{Indicate that these tuples are pairwise disjoint}\ An \emph{(existential) rule} $R$ is a first-order formula	of the form $$\forall \vec x.\forall \vec y. A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$$ where $A$ and $B$ are conjunctions of atoms. We define \emph{body($R$)} = $A$, \emph{head($R$)} = $B$ and the frontier of $R$ \emph{fr($R$)} = $\vec x$ (\todo{write ``that is'' right here}\ the set of variables shared by the body and the head of $R$). An \emph{ontology} $O$ is a pair $(T,F)$ where $T$ is a set of existential rules and $F$ is a factbase.
 \end{definition}
 
 \subsection{Core and universal model}
 
 \begin{definition}[Identity, isomorphism, retract, core]
-$id_{|F}$ is the substitution identity defined by : for all variable $x \in var(F)$, $id_{|F}(x) = x$. An \emph{isomorphism} $h$ is a bijective homomorphism where its inverse is also an homomorphism. A subset $F' \subseteq F$ is a \emph{retract} of $F$ if there exists a subsitution $\sigma$ such that $\sigma(F) = F'$ and $\sigma_{|F'}=id_{|F'}$ %some definition doesn't contain the last condition but it is really useful in the proof of thm 2.1 
-($\sigma$ is called a \emph{retractation} from $F$ to $F'$). If a factabase $F$ contains a strict retract, then we say that $F$ is \emph{redondant}. A factbase is a \emph{core} if it is not redondant. A \emph{core} of a factbase $F$ is a minimal retract of $F$ that is a core.
+$id_{|F}$ is the substitution identity defined by : for all variable $x \in var(F)$, $id_{|F}(x) = x$ \todo{$F$ has not been introduced here}. An \emph{isomorphism} $h$ is a bijective homomorphism where its inverse is also an homomorphism \todo{I would mention the factbases here explicitly.}. A subset $F' \subseteq F$ is a \emph{retract} of $F$ if there exists a subsitution $\sigma$ such that $\sigma(F) = F'$ and $\sigma_{|F'}=id_{|F'}$ %some definition doesn't contain the last condition but it is really useful in the proof of thm 2.1 
+($\sigma$ is called a \emph{retractation} from $F$ to $F'$) \todo{Can't you use the notion of a homomorphism to define a retract?}. If a factabase $F$ contains a strict retract, then we say that $F$ is \emph{redondant}\todo{redundant}. A factbase is a \emph{core} if it is not redondant\todo{Otherwise, it is a \emph{core}.}. A \emph{core} of a factbase $F$ is a minimal retract of $F$ that is a core.\todo{Include discussion: all of the cores of a finite factbase are unique up to isomorphism. Hence, we speak of ``the'' core of a factbase.}
 \end{definition}
 
 \begin{remark}
@@ -96,11 +99,11 @@ is a bijective homomorphism but not an isomorphism.
 \end{remark}
 
 \begin{example}
-$F' = \{B(z),R(x,z)\}$ is the core of $F = \{B(z),B(y),R(x,z),R(x,y)\}$ because : 
+$F' = \{B(z),R(x,z)\}$ is the core of $F = \{B(z),B(y),R(x,z),R(x,y)\}$ because : \todo{In English we do not write a space before colons, semi-colons, exclamation or interrogation marks.}
 \begin{itemize}
 \item $F' \subseteq F$;
 \item $\{x \mapsto x, y \mapsto z, z \mapsto z\}$ is a retractation from $F$ to $F'$;
-\item $card(F') = 2$ and $\emptyset, \{B(z)\},\{B(y)\},\{R(x,z)\},\{R(x,y)\}$ are not retracts of $F$;
+\item $card(F') = 2$ and $\emptyset, \{B(z)\},\{B(y)\},\{R(x,z)\},\{R(x,y)\}$ are not retracts of $F$;\todo{Just say ``all strict subsets''.}
 \end{itemize}
 \end{example}
 
@@ -111,28 +114,28 @@ A factbase $F$ is a core $\Leftrightarrow$ every homomorphism $\sigma: F \to F$ 
 \begin{proof}
 We show it by double-implication. \\
 $\boxed{\Leftarrow}$ By contraposition, suppose that the factbase $F$ is not a core : there exists a strict substet $F'$ of $F$ such that $F'$ is a retract of $F$. There exists a homomorphism $\sigma:F \to F$ such that $\sigma(F) = F'$. As $F' \subsetneq F$, $\sigma$ is not surjective, so it is not a bijection. \\
-$\boxed{\Rightarrow}$ Conversely, by contraposition, suppose that there exists an homomorphism $\sigma_1$ not bijective. As $F$ is finite, $\sigma_1$ is not surjective. We pose $F' = \sigma_1(F)\subsetneq F$ and we pose $\sigma_2:F \to F$ such that for $x \in F'$, $\sigma_2(x) = x$ and for $x \notin F'$, $\sigma_2(x) = \sigma_1(x)$. We have ${\sigma_2}_{|F'} = id_{|F'}$ and $\sigma_2(F) = F'$. So $\sigma_2$ is a retractation from $F$ to $F'$ and so $F'$ is a strict retract of $F$. Consequently $F$ is not a core. It concludes the proof.
+$\boxed{\Rightarrow}$ Conversely, by contraposition, suppose that there exists an homomorphism $\sigma_1$ not bijective \todo{that is not bijective}. As $F$ is finite, $\sigma_1$ is not surjective. We pose $F' = \sigma_1(F)\subsetneq F$ and we pose $\sigma_2:F \to F$ such that for $x \in F'$, $\sigma_2(x) = x$ and for $x \notin F'$, $\sigma_2(x) = \sigma_1(x)$. We have ${\sigma_2}_{|F'} = id_{|F'}$ and $\sigma_2(F) = F'$. So $\sigma_2$ is a retractation from $F$ to $F'$ and so $F'$ is a strict retract of $F$. Consequently $F$ is not a core. It concludes the proof.\todo{You can remove the last sentence.}
 \end{proof}
 
 \begin{definition}[Trigger]
 Let $T$ be a rule set, $\alpha$ be a rule, $\sigma$ be a subsitution and $F$ be a factbase. The tuple $(\alpha,\sigma)$ is a \emph{trigger} for $F$ (or $\alpha$ is \emph{applicable} on $F$ via $\sigma$) if : 
 \begin{itemize}
-\item the domain of $\sigma$ is the set of all variables occurring in Body($\alpha$).
+\item the domain of $\sigma$ is the set of all variables occurring in Body($\alpha$).\todo{Note that ``Body'' is written with two different formats in these lines. This should not be the case.}
 \item $\sigma(Body(\alpha)) \subseteq F$.
-\item For all $\hat \sigma$ which extends $\sigma$ and has its domain equals to the set of all variables occurring in Body($\alpha$) and Head($\alpha$) ,$\hat \sigma(Head(\alpha)) \nsubseteq F$
+\item For all $\hat \sigma$ which extends $\sigma$ and has its domain equals to the set of all variables occurring in Body($\alpha$) and Head($\alpha$)\todo{The second condition in this conjunction may be safely ignored.}, $\hat \sigma(Head(\alpha)) \nsubseteq F$
 \end{itemize}
 \emph{$Tr_{\alpha}(F)$} is the set of all trigers $(\alpha,\sigma)$ for $F$. \emph{$Tr_{T}(F)$} is the set of all trigers $(\alpha,\sigma)$ for $F$ where $\alpha \in T$ and $\sigma$ is a substitution. 
 \end{definition}
 
-\begin{example}If $\alpha = A(x,y) \rightarrow \exists z.B(x,z)$, $F = \{A(b,c)\}$ and $\sigma = \{x \mapsto b, y \mapsto c \}$ then $(\alpha,\sigma)$ is a trigger for $F$.
+\begin{example}If $\alpha = A(x,y) \rightarrow \exists z.B(x,z)$, $F = \{A(b,c)\}$ and $\sigma = \{x \mapsto b, y \mapsto c \}$ then $(\alpha,\sigma)$ is a trigger for $F$.\todo{Discuss: I would recommend that you use the Oxford comma.}
 \end{example}
 
 \begin{definition}[Satisfaction, model, BCQ, universal model]
-The rule $\alpha$ is \emph{satisfied} by the factbase $F$ if $Tr_{\alpha}(F)$ = $\emptyset$. The rule set $T$ is \emph{satisfied} by $F$ (noted $F \models T$) if $Tr_{T}(F)$ = $\emptyset$. A factset $M$ is a \emph{model} for an ontology $O = (T,F)$ if $M \models F$ and $T$ is satisfied by $M$. A \emph{Boolean conjunctive query (BCQ)} (or a \emph{query}) is a closed formula of the form $\exists x_1,...,x_n. F(x_1,...,x_n)$ where $F$ is a conjunction of atoms. A fact set $F$ \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $F \vDash B$) if there exists a substitution $\sigma$ such that $\sigma(B) \subseteq F$. An ontology $O$ \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $O \vDash B$) if for every model $M$ of $O$, $M \vDash B$. A model $U$ for an ontology $O$ is \emph{universal} if for
+The rule $\alpha$ is \emph{satisfied} by the factbase $F$ if $Tr_{\alpha}(F)$ = $\emptyset$. The rule set $T$ is \emph{satisfied} by $F$ (noted $F \models T$) if $Tr_{T}(F)$ = $\emptyset$. A factset\todo{Do you mean ``factbase''?}\ $M$ is a \emph{model} for an ontology $O = (T,F)$ if $M \models F$ and $T$ is satisfied by $M$. A \emph{Boolean conjunctive query (BCQ)} (or a \emph{query}) is a closed formula of the form $\exists x_1,...,x_n. F(x_1,...,x_n)$ where $F$ is a conjunction of atoms.\todo{You can just say that a BCQ is a factbase.}\ A fact set $F$ \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $F \vDash B$) if there exists a substitution $\sigma$ such that $\sigma(B) \subseteq F$. An ontology $O$ \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $O \vDash B$) if $M \vDash B$ for every model $M$ of $O$. A model $U$ for an ontology $O$ is \emph{universal} if for
 every model $M$ of $O$, there exists a homomorphism $h : U \to M$.
 \end{definition}
 
-\begin{example} We pose $O = (\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.A(x,z)$ and $F = \{A(b,c)\}$. We pose $U = \{A(b,c)\}\cup \{A(b,x_i)/ i \in \N\}$.
+\begin{example} We pose $O = (\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.A(x,z)$ and $F = \{A(b,c)\}$. We pose $U = \{A(b,c)\}\cup \{A(b,x_i) \mid i \in \N\}$.
 \begin{itemize}
 \item $F \subseteq U$
 \item $\{\alpha\}$ is satisfied by $U$
@@ -146,16 +149,18 @@ We then pose
 h:U &\to M\\
 x_i &\mapsto y_i
 \end{align*}
-$h$ is a homomorphism from $U$ to $M$.
+$h$ is a homomorphism from $U$ to $M$.\todo{I am a bit confused by this example; let's discuss tomorrow.}
 \end{itemize}
 Consequently, $U$ is a universal model of $O$.
 \end{example}
 
 \begin{proposal}
+\todo{You should write ``Proposition'' instead of ``Proposal''.}
 A factbase $F$ \emph{entails} a factbase $F'$ (often noted $F \models F'$) if and only if there exists a homomorphism from $F'$ to $F$.For example, $F = \{P(b,a),Q(x)\}$ entails $F' = \{P(x,a)\}$ due to the homomorphism $\{x \mapsto b\}$ 
 \end{proposal}
 
-\begin{proposal} If there is at least one binary predicate. Given a factbase $F$ and a query $Q$, the problem of knowing if $F \models Q$ is NP-complete. 
+\begin{proposal} If there is at least one binary predicate. Given a factbase $F$ and a query $Q$, the problem of knowing if $F \models Q$ is NP-complete.
+\todo{This is a bit more than we needed for this project. Next time, you can ask us if a result is necessary before you set up to write it. (On the other hand, it's good that you understand these results.)}
 \end{proposal}
 
 \begin{proof} The size of the problem is $card(term(F))+card(term(Q))$.
@@ -175,12 +180,13 @@ $\boxed{\Leftarrow}$ Conversely, suppose that $G$ is 3-colorable. Let $c:V \to \
 \subsection{Core chase for finite derivation}
 
 \begin{definition}[Application]
-Let $\alpha$ be an axiom, $F$ be a factbase and $T$ be a ruleset. For a trigger $(\alpha,\sigma) \in Tr_\alpha(F)$, the \emph{application} of $(\alpha,\sigma)$ to F is $App_{(\alpha,\sigma)}(F) = F\cup \hat \sigma(Head(\alpha))$ where $\hat \sigma$ extends $\sigma$ and for all $y \notin var(\sigma), \hat \sigma(y) = z_{(\alpha,\sigma)}$ where $z_{(\alpha,\sigma)}$ is a new null. We pose $App_{\alpha}(F) = \cup_{(\alpha,\sigma) \in Tr_\alpha(F)}App_{(\alpha,\sigma)}(F)$ and $App_{T}(F) = \cup_{\alpha \in T}App_{\alpha}(F)$.
+Let $\alpha$ be an axiom, $F$ be a factbase and $T$ be a ruleset. For a trigger $(\alpha,\sigma) \in Tr_\alpha(F)$, the \emph{application} of $(\alpha,\sigma)$ to F is $App_{(\alpha,\sigma)}(F) = F\cup \hat \sigma(Head(\alpha))$ where $\hat \sigma$ \todo{is a substitution that}\ extends $\sigma$ and for all $y \notin var(\sigma), \hat \sigma(y) = z_{(\alpha,\sigma)}$ where $z_{(\alpha,\sigma)}$ is a new null.\todo{Normally, I prefer to be a more precise here and I define exactly how these new variables are ``fresh''. Let's discuss this tomorrow.}
+We pose $App_{\alpha}(F) = \cup_{(\alpha,\sigma) \in Tr_\alpha(F)}App_{(\alpha,\sigma)}(F)$ and $App_{T}(F) = \cup_{\alpha \in T}App_{\alpha}(F)$.
 
 \end{definition} 
 
 \begin{definition}[Prune]
-We note \emph{prune($F$)} the core of the factbase $F$. We will explain in the next section, how we calculate it (in the particular case of Horn-ALC rules).
+We note \emph{prune($F$)} the core of the factbase $F$.\todo{I have noted this before: we need to mention that a finite set of facts admits a unique core (up to isomorphism.)}\ We will explain in the next section, how we calculate it (in the particular case of Horn-ALC rules).
 
 \end{definition} 
 
@@ -190,10 +196,13 @@ A \emph{core chase sequence} for an ontology $O = (T,F)$ is a sequence $(F_n)_{n
 \item $F_0 = F$;
 \item for all $i \in \N^*$, $F_i = Prune(App_T(F_{i-1}))$.
 \end{itemize}
-The core chase \emph{terminates} on $T$ if there exits $i \in \N$ such that $F_{i+1} = F_i$. In this case, we pose \emph{Core($O$)} = $F_i$.
+The core chase \emph{terminates} on $T$ if there exits $i \in \N$ such that $F_{i+1} = F_i$. In this case, we pose \emph{Core($O$)} = $F_i$.\todo{Briefly remark that that Core($O$) is undefined if the core chase does not terminate.}
+\todo{We need to start adding citations; e.g., here you need to reference ``The Chase Revisited''.}
+\todo{We probably want to use a definition that is a bit less deterministic. That is, one were we can choose which rule plus subs is applied first.}
 \end{definition} 
 
 \section{Horn-ALC}
+\todo{Everyone writes Horn-$\mathcal{ALC}$.}
 
 \subsection{Rules}
 
@@ -205,6 +214,14 @@ A (Horn-ALC) axiom is an existential rule of the form :
 \item $\forall x.A(x) \rightarrow \exists y.R(x,y) \wedge B(y)$
 \item $\forall x,y.R(x,y) \wedge B(y) \rightarrow A(x) $
 \end{enumerate}
+\todo{Here you can use the align environment}
+\begin{align}
+\forall x.A_1(x) \wedge...\wedge A_n(x) &\rightarrow B(x) \\
+\forall x,y.A(x) \wedge R(x,y) &\rightarrow B(y) \\
+\forall x.A(x) &\rightarrow \exists y.R(x,y) \wedge B(y) \\
+\forall x,y.R(x,y) \wedge B(y) &\rightarrow A(x)
+\end{align}
+\todo{Usually, everyone omits the universal quantifiers in rules.}
 \end{definition}
 
 \begin{definition}
@@ -212,7 +229,7 @@ For a factbase $F$ and a term $t$, we note $C_F(t)$ the set of unary predicates 
 \end{definition}
 
 \begin{remark}
-We can then represent a database $F$ by a graph $G = (V,E)$ where $V = \{t:A_1,...,A_n /t \in \emph{Terms}$ and $A_1,...,A_n$ are exactly the elements in $C_F(t)\}$ and $E = \{(t_1,t_2) /t_1,t_2 \in \emph{Terms}$ and there exists at least a binary predicate $P$ such that $P(t_1,t_2) \in F$. In this case, we label the edge with exactly the binary predicates $P$ such that $P(t_1,t_2) \in F\}$. For example with $F = \{A(x), B(x),R(x,y),T(x,y),C(y),R(y,z)\}$: \\
+We can then represent a database $F$ by a \todo{labelled}\ graph $G = (V,E)$ where $V = \{t:A_1,...,A_n /t \in \emph{Terms}$ and $A_1,...,A_n$ are exactly the elements in $C_F(t)\}$ and $E = \{(t_1,t_2) /t_1,t_2 \in \emph{Terms}$ and there exists at least a binary predicate $P$ such that $P(t_1,t_2) \in F$. In this case, we label the edge with exactly the binary predicates $P$ such that $P(t_1,t_2) \in F\}$. For example with $F = \{A(x), B(x),R(x,y),T(x,y),C(y),R(y,z)\}$: \\
 
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm, semithick]
   \tikzstyle{every state}=[fill=white,draw=none,text=black]
@@ -224,18 +241,19 @@ We can then represent a database $F$ by a graph $G = (V,E)$ where $V = \{t:A_1,.
   \path (A) edge              node {R,T} (B)
         (B) edge              node {R} (C);
 \end{tikzpicture}
+\todo{I feel like the definition introduced in the remark is not entirely clear. Let's discuss it tomorrow.}
 \end{remark}
 
 \subsection{Algorithm}
 
-I consider in this section that all the factbases don't contain variables.
+I consider in this section that all the factbases don't contain variables.\todo{I would include this restriction on the definition of an ontology. Note that ontologies do not (usually) feature variables in the fact base.}
 
 \begin{definition}
-Let $F$ be a factbase. Let $t_1,t_2$ be two nulls appearing in $F$. we say that $t_1 \blacktriangleleft t_2$ if there exists a predicate $R$ such that $R(t_1,t_2) \in F$. We note $\prec$ the transitive closure of $\blacktriangleleft$. 
+Let $F$ be a factbase. Let $t_1,t_2$ be two nulls appearing in $F$. we say that $t_1 \blacktriangleleft t_2$ if there exists a predicate $R$ such that $R(t_1,t_2) \in F$. We note $\prec$ the transitive closure of $\blacktriangleleft$. \todo{We write $\prec$ to denote the transitive closure of $\blacktriangleleft$.}
 \end{definition}
 
 \begin{proposal}
-$\prec$ is a strict partial order over the set of nulls.
+$\prec$ is a strict partial order over the set of nulls.\todo{This is only true for Horn-$\mathcal{ALC}$ ontologies, isn't it?}
 \end{proposal}
 
 \begin{proof}
@@ -252,11 +270,12 @@ Let $y$ be the first null of the set $\{x,t_1,...,t_n\}$  introduced by the algo
 \end{proof}
 
 \begin{remark}
-We have shown in the proof that the graph (\emph{null},$\blacktriangleleft$ ) don't contain any cycle. Therefore this graph is a forest of trees.
+We have shown in the proof that the graph (\emph{null},$\blacktriangleleft$ ) don't\todo{Write ``do not''} contain any cycle. Therefore this graph is a forest of trees.
 \end{remark}
 
 \begin{definition}[Siblings]
-Two terms $t_1$ and $t_2$ (such that $t_1 \neq t_2$) are \emph{siblings} if $C_F(t_1) \subseteq C_F(t_2)$ or $C_F(t_2) \subseteq C_F(t_1)$ and if there exists a term $t$ and a predicate $R$ such that $R(t,t_1) \in F$ and $R(t,t_2) \in F$.
+Two terms $t_1$ and $t_2$ (such that $t_1 \neq t_2$)\todo{This should not be in parenthesis.}\ are \emph{siblings} if $C_F(t_1) \subseteq C_F(t_2)$ or $C_F(t_2) \subseteq C_F(t_1)$ and if there exists a term $t$ and a predicate $R$ such that $R(t,t_1) \in F$ and $R(t,t_2) \in F$.
+\todo{I would define the relation sibling only based on $\blacktriangleleft$. Then discuss when a term is redundant base on another.}
 \end{definition}
 
 \begin{definition}[Pruning]
