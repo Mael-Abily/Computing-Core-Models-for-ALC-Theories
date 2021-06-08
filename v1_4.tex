@@ -1,0 +1,373 @@
+\documentclass{article}
+
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{example}{Example}[section]
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[section]
+\newtheorem{lemma}{Lemma}[section]
+
+
+
+
+\usepackage{comment}
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata}
+\usepackage[utf8]{inputenc} 		% encodage des caracteres utilise (pour les caracteres accentues) -- non utilise ici.
+%\usepackage[latin1]{inputenc} 		% autre encodage
+\usepackage[english]{babel}		% pour une mise en forme "anglaise"
+\usepackage{amsmath,amssymb,amsthm}	% pour les maths
+\usepackage{graphicx}			% pour inclure des graphiques
+\usepackage{hyperref}			% si vous souhaitez que les references soient des hyperliens
+\usepackage{color}			% pour ajouter des couleurs dans vos textes
+\usepackage{todonotes}
+
+\def \N {\mathbb N}	
+\def \R {\mathbb R}					% definit un nouveau mot cle LateX. Ici, \R designera l'ensemble des reels
+
+\title{Implementing the Core Chase for the Description Logic ALC}
+\author{Maël Abily}	% pour les accents, on peut soit preciser l'encodage et utiliser des caracteres accentues, soit utilise \'e pour un e accent aigu, \`e pour un e accent grave, etc...
+
+\begin{document}
+\maketitle						% Genere le titre
+
+
+
+\begin{comment}
+I modified: definition of atom, the first remark, definition 2 and 3 (including the definition of core),exemple of core, proof of proposition 1.2, the def of $Tr_{T}(F)$, the last exemple and the def of universal model.
+\end{comment}
+
+The goal is to answer a query with a given database and a given set of rules by computing a universal model with an algorithm called the core chase. We are dealing with a restriction of FOL (Horn-$\mathcal{ALC}$ axioms).
+
+\tableofcontents					% si on veut une table des matieres
+\section{Introduction}
+
+\subsection{Syntax}
+
+\begin{definition}[First-order language, constants, predicates, variables, terms, arity, atoms, facts, factbases] We define a \emph{first-order language} as a set of constants (often noted $a,b,c,c_{1},...)$, predicates $(P,Q,R,P_{1},...)$ and variables $(x,y,x_{1},...)$. A \emph{term}  (often noted $t,t_{1},...)$ is a variable or a constant. We write \emph{$\textit{Ar}(P)$} to denote the arity of the predicate $P$. \todo{We write \emph{$\textit{Ar}(P)$} to denote the arity of the predicate $P$.}
+	\todo{Note the use of textit and \$ in the previous comment.}
+ If $t_1,...,t_n$ are terms and $P$ is a predicate where $Ar(P) = n$, then $P(t_{1},...,t_{n})$ is an \emph{atom}. A \emph{fact} is a variable-free atom. Let $t_i^j$ be terms and $P_i$ be predicates. A \emph{factbase} $F := \exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1})\land ...\land P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ is an existentially quantified conjunction of atoms that is closed (ie every variable of F is quantified). Let A be a rule, a rule set, an atom or a factbase. \textbf{var(A)} (respectively \textbf{cst(A)}, and \textbf{term(A)}) is the set of variables (resp. constants and terms) that occur in $A$.\todo{Discuss: define these functions in a more general way so they can apply to e.g. rules, rule sets, atoms, etc} \textbf{var} (respectively \textbf{cst} and \textbf{terms}) is the set of variables (resp. constants and terms). \emph{\textbf{FB}} is the set of factbases.
+\end{definition}
+
+\begin{remark} 
+\textbf{var} and \textbf{cst} are disjoints.
+\end{remark}
+
+\begin{remark} We identify factbases with sets of atoms. For example, we identify the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ with the set
+$\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.
+\end{remark}
+
+\begin{definition}[Substitution, homomorphism]
+A \emph{substitution} $\sigma:X \to \textit{Terms}$ is a function where X is a set of variables. For example $\{x \mapsto z, y \mapsto a \}$ is a substitution from $\{x,y\}$ to \textit{Terms}. We define $\sigma_1:X \cup \emph{const} \to \textit{Terms}$:
+\begin{itemize}
+\item if $x \in X$, $\sigma_1(x) = \sigma(x)$;
+\item if $c$ is a constant, $\sigma_1(c) = c$;
+\end{itemize}
+We define $\sigma_2:\{$Factbases $F$ where \textbf{var(F)} $\subseteq X\} \to \textit{\textbf{FB}}$:
+\begin{itemize}
+\item if $P(t_{1},...,t_{n})$ is an atom in $F$ and $t_1,...,t_n$ are variables in $X$ or are constants $\sigma_2(\{P(t_{1},...,t_{n})\}) = \{P(\sigma_1(t_{1}),...,\sigma_1(t_{n}))\}$ ;
+\item if $A_{1},...,A_{n}$ are atoms in $F$, $\sigma_2(\{A_{1},...,A_{n}\}) = \{\sigma_2(\{A_{1}\}),...,\sigma_2(\{A_{n}\})\}$.
+\end{itemize}
+Let $F$ and $F'$ be two factbases. A \emph{homomorphism} from $F$ to $F'$ is a substitution $\sigma:var(F) \to term(F')$ where $\sigma_2(F) \subseteq F'$.
+\todo{Discuss: I believe that these definitions can be simplified to an extent.}
+\end{definition}
+
+\begin{remark}
+We identify $\sigma_2$ with $\sigma$.
+\end{remark}
+
+\begin{definition}[Existential rule, ontology]
+Let $\vec x$, $\vec y$ and $\vec z$ be tuple of variables pairwise disjoint. An \emph{(existential) rule} $R$ is a first-order formula	of the form $$\forall \vec x.\forall \vec y. A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$$ where $A$ and $B$ are conjunctions of atoms. We define \emph{body($R$)} = $A$, \emph{head($R$)} = $B$ and the frontier of $R$ \emph{fr($R$)} = $\vec x$ (that is the set of variables shared by the body and the head of $R$). An \emph{ontology} $O$ is a pair $(T,F)$ where $T$ is a set of existential rules and $F$ is a factbase.
+\end{definition}
+
+\subsection{Core and universal model}
+
+\begin{definition}[Identity, isomorphism, retract, core]
+Let F be a factbase. $id_{|F}$ is the substitution identity defined by: for all variable $x \in var(F)$, $id_{|F}(x) = x$. Let F' be an other factbase, an \emph{isomorphism} $h: F \to F'$ is a bijective homomorphism where its inverse $h^{-1}:F' \to F$ is also an homomorphism \todo{I would mention the factbases here explicitly.}. A subset $F' \subseteq F$ is a \emph{retract} of $F$ if there exists a homomorphism $\sigma$ such that $\sigma_{|F'}=id_{|F'}$ %some definition doesn't contain the last condition but it is really useful in the proof of thm 2.1 
+($\sigma$ is called a \emph{retractation} from $F$ to $F'$). If a factabase $F$ contains a strict retract, then we say that $F$ is \emph{redundant}. Otherwise, it is a \emph{core}. A \emph{core} of a factbase $F$ is a minimal retract of $F$ that is a core.
+\end{definition}
+
+
+\begin{proposition}
+The cores of a finite factbase F are unique up to isomorphism. Hence, we speak of ``the'' core of a factbase.
+\end{proposition}
+
+\begin{remark}
+A bijective homomorphism is not necessarily an isomorphism. For example, 
+\begin{align*}
+\sigma:\{R(x)\} &\to \{R(a)\}\\
+x &\mapsto a
+\end{align*}
+is a bijective homomorphism but not an isomorphism.
+\end{remark}
+
+\begin{example}
+$F' = \{B(z),R(x,z)\}$ is the core of $F = \{B(z),B(y),R(x,z),R(x,y)\}$ because:
+\begin{itemize}
+\item $F' \subseteq F$;
+\item $\{x \mapsto x, y \mapsto z, z \mapsto z\}$ is a retractation from $F$ to $F'$;
+\item all strict subsets are not retracts of $F$;
+\end{itemize}
+\end{example}
+
+\begin{proposition}
+A factbase $F$ is a core $\Leftrightarrow$ every homomorphism $\sigma: F \to F$ is a bijection.
+\end{proposition}
+
+\begin{proof}
+We show it by double-implication. \\
+$\boxed{\Leftarrow}$ By contraposition, suppose that the factbase $F$ is not a core: there exists a strict substet $F'$ of $F$ such that $F'$ is a retract of $F$. There exists a homomorphism $\sigma:F \to F$ such that $\sigma(F) = F'$. As $F' \subsetneq F$, $\sigma$ is not surjective, so it is not a bijection. \\
+$\boxed{\Rightarrow}$ Conversely, by contraposition, suppose that there exists an homomorphism $\sigma_1$ that is not bijective. As $F$ is finite, $\sigma_1$ is not surjective. We pose $F' = \sigma_1(F)\subsetneq F$ and we pose $\sigma_2:F \to F$ such that for $x \in F'$, $\sigma_2(x) = x$ and for $x \notin F'$, $\sigma_2(x) = \sigma_1(x)$. We have ${\sigma_2}_{|F'} = id_{|F'}$ and $\sigma_2(F) = F'$. So $\sigma_2$ is a retractation from $F$ to $F'$ and so $F'$ is a strict retract of $F$. Consequently $F$ is not a core.
+\end{proof}
+
+
+
+\begin{definition}[Trigger]
+Let $T$ be a rule set, $\alpha$ be a rule, $\sigma$ be a subsitution and $F$ be a factbase. The tuple $(\alpha,\sigma)$ is a \emph{trigger} for $F$ (or $\alpha$ is \emph{applicable} on $F$ via $\sigma$) if: 
+\begin{itemize}
+\item the domain of $\sigma$ is the set of all variables occurring in $Body(\alpha)$.
+\item $\sigma(Body(\alpha)) \subseteq F$.
+\item For all $\hat \sigma$ which extends $\sigma$ and has its domain equals to the set of all variables occurring in Body($\alpha$) and Head($\alpha$)\todo{The second condition in this conjunction may be safely ignored.}, $\hat \sigma(Head(\alpha)) \nsubseteq F$
+\end{itemize}
+\emph{$Tr_{\alpha}(F)$} is the set of all trigers $(\alpha,\sigma)$ for $F$. \emph{$Tr_{T}(F)$} is the set of all trigers $(\alpha,\sigma)$ for $F$ where $\alpha \in T$ and $\sigma$ is a substitution. 
+\end{definition}
+
+\begin{example}If $\alpha = A(x,y) \rightarrow \exists z.B(x,z)$, $F = \{A(b,c)\}$ and $\sigma = \{x \mapsto b, y \mapsto c \}$ then $(\alpha,\sigma)$ is a trigger for $F$.\todo{Discuss: I would recommend that you use the Oxford comma.}
+\end{example}
+
+\begin{definition}[Satisfaction, model, BCQ, universal model]
+The rule $\alpha$ is \emph{satisfied} by the factbase $F$ if $\textit{Tr}_{\alpha}(F)$ = $\emptyset$. The rule set $T$ is \emph{satisfied} by $F$ (noted $F \models T$) if $\textit{Tr}_{T}(F)$ = $\emptyset$. A factbase $M$ is a \emph{model} for an ontology $O = (T,F)$ if $M \models F$ and $T$ is satisfied by $M$. A \emph{Boolean conjunctive query (BCQ)} (or a \emph{query}) is a factbase. A factbase $F$ \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $F \vDash B$) if there exists a substitution $\sigma$ such that $\sigma(B) \subseteq F$. An ontology $O$ \emph{entails} a BCQ $B = \exists x_1,...,x_n.F(x_1,...,x_n)$ (noted $O \vDash B$) if $M \vDash B$ for every model $M$ of $O$. A model $U$ for an ontology $O$ is \emph{universal} if for
+every model $M$ of $O$, there exists a homomorphism $h : U \to M$.
+\end{definition}
+
+\begin{example} We pose $O = (\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.A(x,z)$ and $F = \{A(b,c)\}$. We pose $U = \{A(b,c)\}\cup \{A(b,x_i) \mid i \in \N\}$.
+\begin{itemize}
+\item $F \subseteq U$
+\item $\{\alpha\}$ is satisfied by $U$
+\item let $M$ be a model of $O$. We construct by induction a sequence $(y_i)_{i \in \N}$ of variables such that $A(b,y_n) \in M$: 
+\begin{itemize}
+\item As $F \subseteq M$, $A(b,c) \in M$ and as $\{\alpha\}$ is satisfied by $M$, there exists a variable $y_0$ such that $A(b,y_0) \in M$
+\item if $y_n$ is defined and $A(b,y_n) \in M$, as $\{\alpha\}$ is satisfied by $M$, there exists a variable $y_{n+1}$ such that $A(b,y_{n+1}) \in M$
+\end{itemize}
+We then pose 
+\begin{align*}
+h:U &\to M\\
+x_i &\mapsto y_i
+\end{align*}
+$h$ is a homomorphism from $U$ to $M$.\todo{I am a bit confused by this example; let's discuss tomorrow.}
+\end{itemize}
+Consequently, $U$ is a universal model of $O$.
+\end{example}
+
+\begin{proposition}
+A factbase $F$ \emph{entails} a factbase $F'$ (often noted $F \models F'$) if and only if there exists a homomorphism from $F'$ to $F$.For example, $F = \{P(b,a),Q(x)\}$ entails $F' = \{P(x,a)\}$ due to the homomorphism $\{x \mapsto b\}$ 
+\end{proposition}
+
+\begin{proposition} If there is at least one binary predicate. Given a factbase $F$ and a query $Q$, the problem of knowing if $F \models Q$ is NP-complete.
+\todo{This is a bit more than we needed for this project. Next time, you can ask us if a result is necessary before you set up to write it. (On the other hand, it's good that you understand these results.)}
+\end{proposition}
+
+\begin{proof} The size of the problem is $card(term(F))+card(term(Q))$.
+\begin{itemize}
+\item We choose, as certificate, a homomorphism $\sigma$ from $Q$ to $F$. Firstly, the size of the certificate is $card(var(Q))+ card(terms(F))$ which is polynomial in the size of the problem. Secondly, we can check that the certificate $\sigma$ is a homomorphism in a time which is polynomial in the size of the problem. Therefore, the problem is in NP.  
+\item We make a reduction from 3-COLOR which is known to be NP-complete. Let $G= (V,E)$ be a graph. Let $P$ be a binary predicate. We pose $Q_G = \{P(x,y)/(x,y) \in E\}$ and $K_3 = \{P(c_1,c_2),P(c_1,c_3), P(c_2,c_1),P(c_3,c_1),\\P(c_2,c_3),P(c_3,c_2)\}$. We have to show that $K_3 \models Q_G \Leftrightarrow$ $G$ is 3-colorable. \\
+$\boxed{\Rightarrow}$ Suppose that $K_3 \models Q_G$. There exists a substitution $\sigma:Q_G \to K_3$. We pose: 
+\begin{align*}
+c:V &\to \{c_1,c_2,c_3\}\\
+x &\mapsto \sigma(x)
+\end{align*}
+if $(x,y) \in E$, $P(x,y) \in Q_G$ and so $P(\sigma(x),\sigma(y)) \in K_3$, so $c(x) \neq c(y)$. Therefore, $c$ is a 3-coloration of $G$. \\
+$\boxed{\Leftarrow}$ Conversely, suppose that $G$ is 3-colorable. Let $c:V \to \{c_1,c_2,c_3\}$ be a coloration of $G$. $c$ is a substitution from $Q_G$ to $K_3$. We have to show that $c(Q_G) \subset K_3$. Let $P(x,y)$ be in $Q_G$. We have $(x,y) \in E$, so $c(x) \neq c(y)$. So $P(c(x),c(y)) \in K_3$. Therefore, $c$ is a homomorphism from $Q_G$ to $K_3$ and so $K_3 \models Q_G$.
+\end{itemize}
+\end{proof}
+
+\subsection{Core chase for finite derivation}
+
+It has been firstly defined in \cite{chase}.
+
+\begin{definition}[Application]
+Let $\alpha$ be an axiom, $F$ be a factbase and $T$ be a ruleset. For a trigger $(\alpha,\sigma) \in Tr_\alpha(F)$, the \emph{application} of $(\alpha,\sigma)$ to F is $App_{(\alpha,\sigma)}(F) = F\cup \hat \sigma(Head(\alpha))$ where $\hat \sigma$ is a substitution that extends $\sigma$ and for all $y \notin var(\sigma), \hat \sigma(y) = z_{(\alpha,\sigma)}$ where $z_{(\alpha,\sigma)}$ is a new variable.\todo{Normally, I prefer to be a more precise here and I define exactly how these new variables are ``fresh''. Let's discuss this tomorrow.}
+We pose $App_{\alpha}(F) = \cup_{(\alpha,\sigma) \in Tr_\alpha(F)}App_{(\alpha,\sigma)}(F)$ and $App_{T}(F) = \cup_{\alpha \in T}App_{\alpha}(F)$.
+
+\end{definition} 
+
+\begin{definition}[Prune]
+We note \emph{prune($F$)} the core of the factbase $F$.\todo{I have noted this before: we need to mention that a finite set of facts admits a unique core (up to isomorphism.)}\ We will explain in the next section, how we calculate it (in the particular case of Horn-$\mathcal{ALC}$ rules).
+
+\end{definition} 
+
+\begin{definition}[Core chase]
+A \emph{core chase sequence} for an ontology $O = (T,F)$ is a sequence $(F_n)_{n \in \N}$ of factbases where: 
+\begin{itemize}
+\item $F_0 = F$;
+\item for all $i \in \N^*$, $F_i = Prune(App_T(F_{i-1}))$.
+\end{itemize}
+The core chase \textbf{terminates} on $T$ if there exits $i \in \N$ such that $F_{i+1} = F_i$. In this case, we pose \emph{Core($O$)} = $F_i$. Otherwise, if the core chase does not terminate,Core($O$) is undefined.
+\todo{We need to start adding citations; e.g., here you need to reference ``The Chase Revisited''.}
+\todo{We probably want to use a definition that is a bit less deterministic. That is, one were we can choose which rule plus subs is applied first.}
+\end{definition} 
+
+\section{Horn-$\mathcal{ALC}$}
+
+\subsection{Rules}
+
+\begin{definition}[Horn-$\mathcal{ALC}$ axioms]
+A (Horn-$\mathcal{ALC}$) axiom is an existential rule of the form:
+\begin{align}
+\forall x.A_1(x) \wedge...\wedge A_n(x) &\rightarrow B(x) \\
+\forall x,y.A(x) \wedge R(x,y) &\rightarrow B(y) \\
+\forall x.A(x) &\rightarrow \exists y.R(x,y) \wedge B(y) \\
+\forall x,y.R(x,y) \wedge B(y) &\rightarrow A(x)
+\end{align}
+\todo{Usually, everyone omits the universal quantifiers in rules.}
+\end{definition}
+
+\begin{definition}
+For a factbase $F$ and a term $t$, we note $C_F(t)$ the set of unary predicates $P$ such that $P(t)\in F$.
+\end{definition}
+
+\begin{remark}
+We can then represent a database $F$ by a labelled graph $G = (V,E)$ where $V = \{t:A_1,...,A_n /t \in \textbf{terms}$ and $A_1,...,A_n$ are exactly the elements in $C_F(t)\}$ and $E = \{(t_1,t_2) /t_1,t_2 \in \textbf{terms}$ and there exists at least a binary predicate $P$ such that $P(t_1,t_2) \in F$. In this case, we label the edge with exactly the binary predicates $P$ such that $P(t_1,t_2) \in F\}$. For example with $F = \{A(x), B(x),R(x,y),T(x,y),C(y),R(y,z)\}$: \\
+
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm, semithick]
+  \tikzstyle{every state}=[fill=white,draw=none,text=black]
+
+  \node[state]         (A)                    {$x:A,B$};
+  \node[state]         (B) [above right of=A] {$y:C$};
+  \node[state]         (C) [below right of=A] {$z$};
+
+  \path (A) edge              node {R,T} (B)
+        (B) edge              node {R} (C);
+\end{tikzpicture}
+\todo{I feel like the definition introduced in the remark is not entirely clear. Let's discuss it tomorrow.}
+\end{remark}
+
+\subsection{Algorithm}
+
+I consider in this section that all the factbases don't contain variables.\todo{I would include this restriction on the definition of an ontology. Note that ontologies do not (usually) feature variables in the fact base.}
+
+\begin{definition}
+Let $F$ be a factbase. Let $t_1,t_2$ be two variables appearing in $F$. we say that $t_1 \blacktriangleleft t_2$ if there exists a predicate $R$ such that $R(t_1,t_2) \in F$. We write $\prec$ to denote the transitive closure of $\blacktriangleleft$.
+\end{definition}
+
+\begin{proposition}
+$\prec$ is a strict partial order over the set of variables.\todo{This is only true for Horn-$\mathcal{ALC}$ ontologies, isn't it?}
+\end{proposition}
+
+\begin{proof}
+\begin{itemize}
+\item $\prec$ is transitive by construction
+\item Suppose by contradiction that there exists a variable x such that $x \prec x$. There exists terms $t_1,...,t_n$ such that $x \blacktriangleleft t_1 \blacktriangleleft t_2 \blacktriangleleft ... \blacktriangleleft t_n \blacktriangleleft x$. There exists binary predicates $R_0,...,R_n$ such that $R_0(x,t_1),R_1(t_1,t_2),...,R_n(t_n,x) \in F$. We show by induction on $i\in \{0,...,n\}$, $H(i)$: "for $1 \leq k \leq i,t_k$ is a variable".
+\begin{itemize}
+\item $H(0)$ is true.
+\item Suppose that $H(i-1)$ is true for $i \in \{1,...,n\}$. We have to show that $t_i$ is a variable. $R_{i-1}(t_{i-1},t_i) \in F$ and $t_{i-1}$ is a variable, so $R_{i-1}(t_{i-1},t_i)$ has been introduced by the axiom 3. As the application of the chase algorithm introduced only variables, $t_i$ is a variable. So $H(i)$ is true.
+\item Consequently, $t_1,...,t_n$ are variables.
+\end{itemize}
+Let $y$ be the first variable of the set $\{x,t_1,...,t_n\}$  introduced by the algorithm. There exists $R$ and $z \in \{x,t_1,...,t_n\}$ such that $R(z,y) \in F$. $R(z,y)$ has been introduced by the axiom 3. As the application of the chase algorithm introduced only fresh variables, $z$ is introduced before $y$. It contradicts the youngness of the variable $y$. Consequently $x \nprec x$, so $\prec$ is irreflexive over \textbf{variable}.
+\end{itemize}
+\end{proof}
+
+\begin{remark}
+We have shown in the proof that the graph (\textbf{variable},$\blacktriangleleft$ ) do not contain any cycle. Therefore this graph is a forest of trees.
+\end{remark}
+
+\begin{definition}[Siblings]
+Two terms $t_1$ and $t_2$ such that $t_1 \neq t_2$ are \emph{siblings} if $C_F(t_1) \subseteq C_F(t_2)$ or $C_F(t_2) \subseteq C_F(t_1)$ and if there exists a term $t$ and a predicate $R$ such that $R(t,t_1) \in F$ and $R(t,t_2) \in F$.
+\todo{I would define the relation sibling only based on $\blacktriangleleft$. Then discuss when a term is redundant base on another.}
+\end{definition}
+
+\begin{definition}[Pruning]
+Let $F$ be a factbase and $\textbf{terms(F)} = \{t_1,...t_n\}$ is such that $(i<j \wedge t_i,t_j \in$ \textbf{variable}) $\Rightarrow t_j \nprec t_i$
+The \emph{pruning sequence} of $F$ is the sequence $(F_i)_{i \in \{0,...,n\}}$ of factbases where:
+\begin{itemize}
+\item $F_0 = F$;
+\item for all $i \in \{1,...,n\}$,
+\begin{itemize}
+\item if $t_i$ is not anymore a term of $F$, $F_i = F_{i-1}$;
+\item Otherwise, we look at all the siblings $y$ of $x_i$ such that $y$ is a variable. We note $S$ the set containing $y$ and all the variables $z$ such that $y \prec z$.  $F_i$ is the set obtained when we remove every fact of $F_{i-1}$  that contains a variable in $S$.
+\end{itemize}
+\end{itemize}
+We pose \emph{prune($F$)} = $F_n$.
+\end{definition}
+
+\begin{lemma}
+Let $F,F'$ be two factbases such that $F' \subsetneq F'$ and $h$ a retract from $F$ to $F'$. $\forall x \in var(F')$, $h(x) =x$.
+\end{lemma}
+
+\begin{proof}
+Let $x \in var(F')$. There is a predicate $P$ of arity $n$ and terms $t_1,...,t_n$ such that $P(t_1,...,t_n) \in F'$ and $x \in \{t_1,...,t_n\}$. $h$ is a rectract so $h(P(t_1,...,t_n)) = P(t_1,...,t_n)$ so for $i \in \{1,...,n\}$, $h(t_i) = t_i$. In particular, $h(x) = x$.
+\end{proof}
+
+\begin{theorem} 
+Let $F$ be a factbase. \emph{prune($F$)} is the core of the factbase $F$.
+\end{theorem}
+
+\begin{proof}
+\begin{itemize}
+\item The pruning algorithm only take off facts of the factbase. Consequently, $prune(F) \subseteq F$.
+\item We pose 
+\begin{align*}
+h_0:F &\to prune(F)\\
+x &\mapsto x \text{ if }x \in var(prune(F))\\
+x &\mapsto \text{the unique sibling of }x\text{ which is in } var(prune(F))\text{ otherwise}
+\end{align*}
+\begin{itemize}
+\item ${h_0}_{|Prune(F)}=id_{|Prune(F)}$ by construction.
+\item For $\alpha \in F$, $h_0(\alpha)$ contains only variable in $prune(F)$, so the pruning algorithm don't take off the fact $h_0(\alpha)$ so $h_0(\alpha) \in prune(F)$. Therefore, $h_0(F) \subseteq prune(F)$. Conversely, as ${h_0}_{|Prune(F)}=id_{|Prune(F)}$, $Prune(F) \subseteq h_0(F)$. So $h_0(F) = prune(F)$
+\end{itemize}
+We have shown that $h_0$ is a retract so $Prune(F)$ is a retract of F.
+\item Suppose by contradiction that $prune(F)$ is not a core. There exists $F' \subsetneq prune(F)$ such that $F'$ is a retract of $prune(F)$. There exists then a retract $h_1: Prune(F) \to F'$.  Let $\alpha \in prune(F)\setminus F'$ , there are two cases:
+\begin{itemize}
+\item Case 1: there exists an unary predicate $P$ and a term $t$ such that $\alpha = P(t)$. If $t$ is a constant, $h_1(\alpha) = \alpha$ and so $\alpha \in Prune(F)$, contradiction: $t$ is not a constant. If $t \in var(F')$, by lemma 2.1, h(t) = t so $h_1(\alpha) = \alpha$ so $\alpha \in F'$: contradiction with $\alpha \notin F'$. Therefore $t \in var(prune(F))\setminus var(F')$
+\item Case 2: there exists a binary predicate $P$ and two terms $t,t_1$ such that $\alpha = P(t,t_1)$. If $t$ and $t_1$ are both constants or in $var(F')$, we have, as in case 1, $h(t) = t$ and $h(t_0) = t_0$, so $h_1(\alpha) = \alpha$ and so $\alpha \in Prune(F)$, contradiction with $\alpha \notin F'$: $t$ or $t_1$ is in $var(prune(F))\setminus var(F')$.
+\end{itemize}
+In both cases, we have shown that $var(prune(F))\setminus var(F') \neq \emptyset$ Let $x$ be a $\prec$-minimal variable of this set. $x$ is a variable, so has been introduced by the pruning algorithm due to the axiom 3. So there exists a term $t$ and a relation $R$ such that $R(t,x) \in F$. By minimality of $x$, $t \in F'$. So, by lemma 2.1, $h(t) = t$, so $h(R(t,x)) = R(t,h(x))$. $x \notin F'$ and $h(x) \in F'$ so $h(x) \neq x$. Let $A \in C_{F}(x)$, $x \in var(prune(F))$ so $A(x) \in prune(F)$. $h(A(x)) \in Prune(F)$ so $A(h(x)) \in F$ so $A \in C_F(h(x))$. Consequently, $h(x)$ is a sibling of $x$ in $F$. So the pruning algorithm should have suppress all the facts containing $x$ or suppress all the facts containing $h(x)$, so $x \notin Prune(F)$ or $h(x) \notin Prune(F)$: contradiction. So $prune(F)$ is a core of $F$
+\end{itemize}
+To conclude, \emph{prune($F$)} is a core of the factbase $F$.
+\end{proof}
+
+\begin{theorem} 
+Let $O = (T,F)$ be an ontology. this ontology admits a finite universal model if and only if the core chase terminates on $O$
+\end{theorem}
+
+\begin{proof}
+...
+\end{proof}
+
+
+\bibliographystyle{plain}
+\bibliography{sample}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+tree-like structure 
+
+\begin{definition}[Entailment]
+A factbase F \emph{entails} a factbase F' (often noted F $\models F'$) if for all model M de T, M is a model of F'. 
+\end{definition}
+
+Let $\prec$ be a strict total order over the set of variables. A variable x occuring in a factbase F is \emph{superfluous} if there exists two variables y and z such that:
+\begin{itemize}
+\item For all unary predicate P such that $P(x) \in F$, $P(y) \in F$.
+\item For all binary predicate R such that $R(z,x) \in F$, $R(z,y) \in F$
+\end{itemize}
+The \emph{pruning sequence} of a factbase F is the sequence $(F_i)_{i \in \{1,...,n\}}$ of factbases where:
+\begin{itemize}
+\item $F_1 = F$;
+\item for all $i \in \{2,...,n\}$, $F_i$ is the set obtained when we remove every fact of $F_{i-1}$  that contains the smallest superfluous variable (smallest according to $\prec$).
+\item $F_n$ does not contain any superfluous variables.
+\end{itemize}
+We pose \emph{prune(F)} = $F_n$.
