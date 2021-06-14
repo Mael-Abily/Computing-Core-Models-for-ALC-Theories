@@ -307,7 +307,7 @@ Let $F$ be a factbase. \emph{prune($F$)} is the core of the factbase $F$.
 \begin{proof}
 \begin{itemize}
 \item The pruning algorithm only take off facts of the factbase. Consequently, $prune(F) \subseteq F$.
-\item We pose 
+\item We pose\todo{I don't understand; discuss.}
 \begin{align*}
 h_0:F &\to prune(F)\\
 x &\mapsto x \text{ if }x \in var(prune(F))\\
@@ -320,8 +320,8 @@ x &\mapsto \text{the unique sibling of }x\text{ which is in } var(prune(F))\text
 We have shown that $h_0$ is a retract so $Prune(F)$ is a retract of F.
 \item Suppose by contradiction that $prune(F)$ is not a core. There exists $F' \subsetneq prune(F)$ such that $F'$ is a retract of $prune(F)$. There exists then a retract $h_1: Prune(F) \to F'$.  Let $\alpha \in prune(F)\setminus F'$ , there are two cases :
 \begin{itemize}
-\item Case 1 : there exists an unary predicate $P$ and a term $t$ such that $\alpha = P(t)$. If $t$ is a constant, $h_1(\alpha) = \alpha$ and so $\alpha \in Prune(F)$, contradiction : $t$ is not a constant. If $t \in var(F')$, by lemma 2.1, h(t) = t so $h_1(\alpha) = \alpha$ so $\alpha \in F'$ : contradiction with $\alpha \notin F'$. Therefore $t \in var(prune(F))\setminus var(F')$
-\item Case 2 : there exists a binary predicate $P$ and two terms $t,t_1$ such that $\alpha = P(t,t_1)$. If $t$ and $t_1$ are both constants or in $var(F')$, we have, as in case 1, $h(t) = t$ and $h(t_0) = t_0$, so $h_1(\alpha) = \alpha$ and so $\alpha \in Prune(F)$, contradiction with $\alpha \notin F'$: $t$ or $t_1$ is in $var(prune(F))\setminus var(F')$.
+\item Case 1 : there exists an unary predicate $P$ and a term $t$ such that $\alpha = P(t)$. If $t$ is a constant, $h_1(\alpha) = \alpha$ and so $\alpha \in Prune(F)$, contradiction : $t$ is not a constant. If $t \in var(F')$, by lemma 2.1, h(t) = t so $h_1(\alpha) = \alpha$ so $\alpha \in F'$ : contradiction with $\alpha \notin F'$. Therefore $t \in var(prune(F))\setminus var(F')$\todo{don't understand; discuss.}
+\item \item Case 2 : there exists a binary predicate $P$ and two terms $t,t_1$ such that $\alpha = P(t,t_1)$. If $t$ and $t_1$ are both constants or in $var(F')$, we have, as in case 1, $h(t) = t$ and $h(t_0) = t_0$, so $h_1(\alpha) = \alpha$ and so $\alpha \in Prune(F)$, contradiction with $\alpha \notin F'$: $t$ or $t_1$ is in $var(prune(F))\setminus var(F')$.
 \end{itemize}
 In both cases, we have shown that $var(prune(F))\setminus var(F') \neq \emptyset$ Let $x$ be a $\prec$-minimal null of this set. $x$ is a null, so has been introduced by the pruning algorithm due to the axiom 3. So there exists a term $t$ and a relation $R$ such that $R(t,x) \in F$. By minimality of $x$, $t \in F'$. So, by lemma 2.1, $h(t) = t$, so $h(R(t,x)) = R(t,h(x))$. $x \notin F'$ and $h(x) \in F'$ so $h(x) \neq x$. Let $A \in C_{F}(x)$, $x \in var(prune(F))$ so $A(x) \in prune(F)$. $h(A(x)) \in Prune(F)$ so $A(h(x)) \in F$ so $A \in C_F(h(x))$. Consequently, $h(x)$ is a sibling of $x$ in $F$. So the pruning algorithm should have suppress all the facts containing $x$ or suppress all the facts containing $h(x)$, so $x \notin Prune(F)$ or $h(x) \notin Prune(F)$ : contradiction. So $prune(F)$ is a core of $F$
 \end{itemize}
