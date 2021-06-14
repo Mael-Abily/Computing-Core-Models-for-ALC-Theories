@@ -376,10 +376,10 @@ Let $F'$ be a factbase that has been genered in a core chase derivation of the k
 \end{definition}
 
 \begin{definition}[$\mathcal{ALC}$-Pruning]
-Let $F'$ be a factbase that has been genered in a core chase derivation of the knowledge base $O$. Let $\textbf{term(F')} = \{t_1,...t_n\}$ is such that $(i<j \wedge t_i,t_j \in$ \textbf{var}) $\Rightarrow t_j \nprec^+ t_i$
+Let $F'$ be a factbase that has been genered in a core chase derivation of the knowledge base $O$. Let $\textbf{term(F')} = \{t_1,...t_n\}$ is such that $(t_i \in \textbf{cst} \wedge t_j \in \textbf{var}) \Rightarrow i < j$ and $(t_i \prec^+ t_j \wedge t_i,t_j \in \textbf{var}) \Rightarrow i < j$
 we create an homomorphism $h$ over $F'$.
 For all $i \in \{1,...,n\}$,
-If $t_i$ is a variable mapped by $h$ on an other term, we do nothing.
+If $t_i$ is a variable already mapped by $h$ on an other term, we do nothing.
 Otherwise, we look at all the siblings $y$ of $t_i$ such that $y$ is a variable and $C_{F'}(y) \subseteq C_{F'}(t_i)$. We define $h(z)$ by induction for every $z$ such that $y \prec^+ z$ or $y = z$:
 \begin{itemize}
 \item We pose $h(y) = t_i$.
