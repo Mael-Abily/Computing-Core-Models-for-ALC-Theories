@@ -1,0 +1,496 @@
+\documentclass{article}
+
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{example}{Example}[section]
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[section]
+\newtheorem{lemma}{Lemma}[section]
+
+
+
+
+\usepackage{comment}
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata}
+\usepackage[utf8]{inputenc} 		% encodage des caracteres utilise (pour les caracteres accentues) -- non utilise ici.
+%\usepackage[latin1]{inputenc} 		% autre encodage
+\usepackage[english]{babel}		% pour une mise en forme "anglaise"
+\usepackage{amsmath,amssymb,amsthm}	% pour les maths
+\usepackage{graphicx}			% pour inclure des graphiques
+\usepackage{hyperref}			% si vous souhaitez que les references soient des hyperliens
+\usepackage{color}			% pour ajouter des couleurs dans vos textes
+\usepackage{todonotes}
+
+\def \N {\mathbb N}	
+\def \R {\mathbb R}					% definit un nouveau mot cle LateX. Ici, \R designera l'ensemble des reels
+
+\title{Implementing the Core Chase for the Description Logic ALC}
+\author{Maël Abily}	% pour les accents, on peut soit preciser l'encodage et utiliser des caracteres accentues, soit utilise \'e pour un e accent aigu, \`e pour un e accent grave, etc...
+
+\begin{document}
+\maketitle						% Genere le titre
+
+
+
+\begin{comment}
+I modified: definition of atom, the first remark, definition 2 and 3 (including the definition of core),exemple of core, proof of proposition 1.2, the def of $Tr_{T}(F)$, the last exemple and the def of universal model.
+\end{comment}
+
+The goal is to answer a query with a given database and a given set of rules by computing a universal model with an algorithm called the core chase. We are dealing with a restriction of FOL (Horn-$\mathcal{ALC}$ axioms).
+
+\tableofcontents					% si on veut une table des matieres
+\section{Background}
+
+We only define what we need in first order logic but we do not redefine basics (interpretations, formulas,...).
+
+\subsection{Facts}
+
+\subsubsection{Syntax}
+
+We considered a set of variables \textbf{var} (often noted $x,y,x_{1},...$). We define a \emph{vocabulary} as a tuple (\textbf{cst},\textbf{pred}) where \textbf{cst} is a set of constants (often noted $a,b,c,c_{1},...$) and \textbf{pred} is a set of predicates $(P,Q,R,P_{1},...)$. \textbf{cst}, \textbf{var} and \textbf{pred} are disjoints. A \emph{term}  (often noted $t,t_{1},...$) is a variable or a constant. We note \textbf{term} the set of terms. We write \emph{$\textit{Ar}(P)$} to denote the arity of the predicate $P$. 
+
+\begin{definition}
+If $t_1,...,t_n$ are terms and $P$ is a predicate where $Ar(P) = n$, then $P(t_{1},...,t_{n})$ is an \emph{atom}. The atom $P(t_{1},...,t_{n})$ is said to be \emph{ground} when $t_1,...,t_n$ are constants. 
+\end{definition}
+
+\begin{definition}
+A \emph{factbase} $F$ is an existentially closed conjunction of atoms: $F := \exists x_{1},...,x_{n}.P_{1}(t_{1}^{1},...,t_{k_{1}}^{1})\land ...\land P_{m}(t_{1}^{m},...,t_{k_{m}}^{m})$ where $t_i^j$ are terms and $P_i$ are predicates.
+\end{definition}
+For convenience, we identify factbases as sets of atoms, which allows to  use  set  notions  such  as  the  inclusion  on  sets  of  facts. For example, we identify the factbase $\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$ with the set of facts $\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$.
+
+Let $A$ be a formula. \emph{$\textbf{var(A)}$} (respectively \emph{$\textbf{cst(A)}$}, and \emph{$\textbf{term(A)}$}) is the set of variables (resp. constants, and terms) that occur in $A$.  \emph{\textbf{FB}} is the set of factbases.
+
+\subsubsection{Semantic}
+
+\begin{definition}
+A factbase $F$ \emph{entails} a factbase $F'$ (often noted $F \models F'$) if each interpretation satisfying $F$ statisfies $F'$.
+\end{definition}	
+
+\subsubsection{Homomorphism}
+
+\begin{definition}[Substitution]
+A \emph{substitution} $\sigma:X \to \textbf{Term}$ is a function where X is a set of variables. For example $\{x \mapsto z, y \mapsto a \}$ is a substitution from $\{x,y\}$ to \textbf{Term}. By extension: 
+\begin{itemize}
+\item if $c \in \textbf{cst}$, then $\sigma(c) = c$;
+\item if $x \in \textbf{var} \setminus X$, $\sigma(x) = x$;
+\item if $f = P(t_1,...,t_n)$ is an atom, then $\sigma(f) = P(\sigma(t_1),...,\sigma(t_n))$;
+\item if $F = \{f_1,...,f_n\}$ is a factbase, then $\sigma(F) = \{\sigma(f_1),...,\sigma(f_n)\}$
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+Let $F$ and $F'$ be two factbases. A \emph{homomorphism} from $F$ to $F'$ is a substitution $\sigma:var(F) \to term(F')$ where $\sigma(F) \subseteq F'$.
+\end{definition}
+
+\begin{definition}
+Let $F$ and $F'$ be two factbases. An \emph{isomorphism} $h:F \to F'$ is a bijective homomorphism where its inverse $h^{-1}:F' \to F$ is also an homomorphism. 
+\end{definition}
+
+%\begin{remark}
+%A bijective homomorphism is not necessarily an isomorphism. For example, 
+%\begin{align*}
+%\sigma:\{R(x)\} &\to \{R(a)\}\\
+%x &\mapsto a
+%\end{align*}
+%is a bijective homomorphism but not an isomorphism.
+%\end{remark}
+
+\begin{theorem}[Homomorphism Theorem]
+A factbase $F$ \emph{entails} a factbase $Q$ (often noted $F \models Q$) if and only if there exists a homomorphism from $Q$ to $F$.
+\end{theorem}
+
+\begin{proof}
+\cite{base}
+\end{proof}
+
+\begin{example}
+The factbase $F = \{P(b,a),A(x)\}$ entails the factbase $Q = \{P(x,a),P(y,z)\}$ due to the homomorphism $\{x \mapsto b, y \mapsto b, z \mapsto a \}$.
+\end{example}
+
+\begin{remark}
+Given two factbases $F$ and $Q$, the problem to know if $F \models Q$ is NP-complete.
+\end{remark}
+
+
+%\begin{proof} The size of the problem is $\textit{card}(\textbf{term}(F))+\textit{card}(\textbf{term}(Q))$.
+%\begin{itemize}
+%\item We choose, as certificate, a homomorphism $\sigma$ from $Q$ to $F$. Firstly, the size of the certificate is $card(var(Q))+ card(terms(F))$ which is polynomial in the size of the problem. Secondly, we can check that the certificate $\sigma$ is a homomorphism in a time which is polynomial in the size of the problem. Therefore, the problem is in NP.  
+%\item We make a reduction from 3-COLOR which is known to be NP-complete. Let $G= (V,E)$ be a graph. Let $P$ be a binary predicate. We pose $Q_G = \{P(x,y)/(x,y) \in E\}$ and $K_3 = \{P(c_1,c_2),P(c_1,c_3), P(c_2,c_1),P(c_3,c_1),\\P(c_2,c_3),P(c_3,c_2)\}$. We have to show that $K_3 \models Q_G \Leftrightarrow$ $G$ is 3-colorable. \\
+%$\boxed{\Rightarrow}$ Suppose that $K_3 \models Q_G$. There exists a substitution $\sigma:Q_G \to K_3$. We pose: 
+%\begin{align*}
+%c:V &\to \{c_1,c_2,c_3\}\\
+%x &\mapsto \sigma(x)
+%\end{align*}
+%if $(x,y) \in E$, $P(x,y) \in Q_G$ and so $P(\sigma(x),\sigma(y)) \in K_3$, so $c(x) \neq c(y)$. Therefore, $c$ is a 3-coloration of $G$. \\
+%$\boxed{\Leftarrow}$ Conversely, suppose that $G$ is 3-colorable. Let $c:V \to \{c_1,c_2,c_3\}$ be a coloration of $G$. $c$ is a substitution from $Q_G$ to $K_3$. We have to show that $c(Q_G) \subset K_3$. Let $P(x,y)$ be in $Q_G$. We have $(x,y) \in E$, so $c(x) \neq c(y)$. So $P(c(x),c(y)) \in K_3$. Therefore, $c$ is a homomorphism from $Q_G$ to $K_3$ and so $K_3 \models Q_G$.
+%\end{itemize}
+%\end{proof}
+
+Since we can compare two sets of facts with respect to logical consequence, it is natural to consider the core of a set of facts.
+
+
+
+\subsubsection{Core}
+
+Let F be a factbase. $id_{|F}$ is the substitution identity defined by: for all variable $x \in \textbf{var}(F)$, $id_{|F}(x) = x$. 
+
+
+\begin{definition}
+A subset $F' \subseteq F$ is a \emph{retract} of $F$ if there exists a homomorphism $\sigma:F \to F'$ such that $\sigma_{|F'}=id_{|F'}$ ($\sigma$ is called a \emph{retractation} from $F$ to $F'$).
+\end{definition}
+
+\begin{definition}
+If a factabase $F$ contains a strict retract, then we say that $F$ is \emph{redundant}. Otherwise, it is a \emph{core}. A \emph{core} of a factbase $F$ (noted \emph{$\textit{core}(F)$}) is a minimal retract of $F$ that is a core.
+\end{definition}
+
+\begin{proposition}
+The cores of a finite factbase F are unique up to isomorphism. Hence, we speak of ``the'' core of a factbase.
+\end{proposition}
+
+
+\begin{example}
+$F' = \{B(x,y),R(y,z)\}$ is the core of $F = \{B(x,y),R(y,z),B(x,w),R(w,z)\}$ because:
+\begin{itemize}
+\item $F' \subseteq F$;
+\item $\{x \mapsto x, y \mapsto y, z \mapsto z, w \mapsto y\}$ is a retractation from $F$ to $F'$;
+\item all strict subsets of $F'$ are not retracts of $F'$.
+\end{itemize}
+\end{example}
+
+\begin{proposition}
+A factbase $F$ is a core $\Leftrightarrow$ every homomorphism $\sigma: F \to F$ is a bijection.
+\end{proposition}
+
+\begin{proof}
+We show it by double-implication. \\
+$\boxed{\Leftarrow}$ By contraposition, suppose that the factbase $F$ is not a core: there exists a strict substet $F'$ of $F$ such that $F'$ is a retract of $F$. There exists a homomorphism $\sigma:F \to F$ such that $\sigma(F) = F'$. As $F' \subsetneq F$, $\sigma$ is not surjective, so it is not a bijection. \\
+$\boxed{\Rightarrow}$ Conversely, by contraposition, suppose that there exists an homomorphism $\sigma_1$ that is not bijective. As $F$ is finite, $\sigma_1$ is not surjective. We pose $F' = \sigma_1(F)\subsetneq F$ and we pose $\sigma_2:F \to F$ such that for $x \in F'$, $\sigma_2(x) = x$ and for $x \notin F'$, $\sigma_2(x) = \sigma_1(x)$. We have ${\sigma_2}_{|F'} = id_{|F'}$ and $\sigma_2(F) = F'$. So $\sigma_2$ is a retractation from $F$ to $F'$ and so $F'$ is a strict retract of $F$. Consequently $F$ is not a core.
+\end{proof}
+
+
+
+\subsection{Existential rules}
+
+\subsubsection{Syntax}
+
+\begin{definition}
+Let $\vec x$, $\vec y$ and $\vec z$ be tuple of variables pairwise disjoint. An \emph{(existential) rule} $R$ is a first-order formula	of the form $$\forall \vec x.\forall \vec y.( A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z))$$ where $A$ and $B$ are conjunctions of atoms. We define \emph{$\textit{body}(R)$} = $A$, \emph{$\textit{head}(R)$} = $B$ and the frontier of $R$ \emph{$\textit{fr}(R)$} = $\vec x$ (that is the set of variables shared by the body and the head of $R$). We also note \emph{$\textit{ev}(R)$} the set $\vec{z}$ of existential variables of the rule.
+\end{definition}
+We will omit the universal quantifiers when representing existential rules.
+\begin{definition}
+A \emph{knowledge base} $O$ is a pair $(R,F)$ where $R$ is a set of existential rules and $F$ is a  ground factbase.
+\end{definition}
+
+\begin{definition}
+A \emph{Boolean conjunctive query} (or a \emph{query}) is a factbase.
+\end{definition}
+
+\subsubsection{Semantic}
+
+\begin{definition}[Entailment]
+A factbase $F$ \emph{entails} a rule $\alpha$ if each interpretation satisfying $F$ statisfies $\alpha$. We will note $F \models R$ if $F$ entails each rule of the rule set $R$.
+\end{definition}
+
+\begin{theorem}
+A factbase $F$ \emph{entails} a rule $\alpha = A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$ if and only if for every homomorphism from $A$ to $F$, there exists an extension of $\sigma$ that is a homomorphism from $B$ to $F$.
+\end{theorem}
+
+\begin{definition}[Entailment]
+Let $O=(R,F)$ be a knowledge base. $O$ \emph{entails} a query B (often noted $O \models B$) if each interpretation satisfying $F$ and satisfying $R$ statisfies $B$.
+\end{definition}
+
+\begin{definition}[Universal model]
+A factbase $M$ is a \emph{model} for a knowledge base $O = (T,F)$ if $M \models F$ and $M \models R$.  A model $U$ for a knowledge base $O$ is \emph{universal} if for
+every model $M$ of $O$, there exists a homomorphism $h : U \to M$.
+\end{definition}
+
+Given a knowledge base $O=(R,F)$, there always exists a model of $O$ that can be considered as a representation of all models of $O$, ie it is  is  sufficient  to  consider this model to check entailment from $O$. This model has the property of being universal.
+
+\begin{example} We pose $O = (\{\alpha\},F)$ where $\alpha = A(x) \rightarrow \exists z.R(x,z) \wedge A(z)$ and $F = \{A(b)\}$. We pose $U = \{A(b),R(b,x_0)\}\cup \{A(x_i)\mid i \in \N\}\cup \{R(x_i,x_{i+1}) \mid i \in \N\}$. $U$ is a universal model of $O$. In this knowledge base, all universal models are not finite.
+\end{example}
+
+\begin{proposition}
+A knowledge base $O$ entails a query $B$ if $M \models B$ for every model $M$ of $O$
+\end{proposition}
+
+An important problem that this document has to deal with is : Given a knowledge base $O=(R,F)$ and a query $Q$,  does $O \models Q$?
+
+It  is  well-known  that  this  problem  is  undecidable .
+
+
+
+\subsection{The chase}
+
+The process of applying rules on a factbase in order to infer more knowledge is called forward chaining.   Forward  chaining  in  existential  rules  is  usually achieved  via  a  family  of  algorithms  called the  chase. It can be seen as a two-steps process: it first repeatedly applies rules to the set of facts (and evenually computes sometimes the core to supress redondant facts), then it looks for an answer to the query in this saturated set of facts. This saturated set of facts is a universal model of the knowledge base, and since the problem of entailment is undecidable, this process may not halt.
+
+\begin{definition}[Trigger]
+Let $T$ be a rule set, $\alpha$ be a rule, $\sigma$ be a subsitution and $F$ be a factbase. The tuple $t = (\alpha,\sigma)$ is a \emph{trigger} for $F$ (or $\alpha$ is \emph{applicable} on $F$ via $\sigma$) if: 
+\begin{itemize}
+\item the domain of $\sigma$ is the set of all variables occurring in $Body(\alpha)$.
+\item $\sigma(Body(\alpha)) \subseteq F$.
+\end{itemize}
+The tuple $t = (\alpha,\sigma)$ is an \emph{active trigger} if $t$ is a trigger and if for all $\hat \sigma$ that extends $\sigma$ over $\textbf{var}(\textit{Head}(\alpha))$, $\hat \sigma(Head(\alpha)) \nsubseteq F$.
+
+\end{definition} 
+
+The chase will considere triggers to infer new knowledge from a initial factbase. We explain now how it would apply a trigger, giving rise to the notion of application. :
+
+\begin{definition}[application]
+Let $t = (\alpha,\sigma)$ be a trigger of the factbase $F$. Let $\hat \sigma$ be a substitution that extends $\sigma$ over $\textbf{var}(\textit{Head}(\alpha))$ such that for $y \in \textit{ev}(R)$,$\hat \sigma(y) = n$ where $n$ is a new variable, we note \emph{$\textit{source}(n)$}= $(\alpha,\sigma,y)$.
+the factbase $\beta(F,t)=F \cup \hat \sigma(\textit{Head}(\alpha))$ is called an \emph{oblivious application} on the factbase $F$ through the trigger $t = (\alpha,\sigma)$. If $t$ is an active trigger, $\beta(F,t)=F \cup \hat \sigma(\textit{Head}(\alpha))$ is called a \emph{restricted application} on the factbase $F$ through the trigger $t = (\alpha,\sigma)$.
+\end{definition}
+
+\begin{definition}[Derivation and fairness]
+A \emph{derivation} from a knowledge base $O= (F,R)$ is a (possibly infinite) sequence of pairs $D = (t_i,F_i)_{i}$ where $F_0 = F$ and $F_{i+1}$ is obtained by an operation over $F_i$. We note $(t^D_j)_j$ the sequence of used triggers during the derivation $D$ through the operations application (either oblivious or restricted). The derivation $D$ is \emph{fair} (respectively \emph{actively fair}) if:
+\begin{itemize}
+\item the $t_j$ are pairwise distincts;
+\item for every $i$, for every trigger (resp. active trigger) $t$ applicable on $F_i$, there exists $k > i$ such that $t$ is not anymore an active trigger on $F_k$.
+\end{itemize}
+\end{definition}
+
+A fair derivation garantees that we consider every possible application. An easy way to have a fair derivation is to do a breadth-first search (BFS) on the terms.
+
+\begin{example}. If $\alpha = A(x,y) \rightarrow \exists z.B(x,z)$, $F = \{A(b,c)\}$, and $\sigma = \{x \mapsto b, y \mapsto c \}$ then $(\alpha,\sigma)$ is a trigger for $F$. $\beta(F,(\alpha,\sigma)) = \{A(b,c),B(b,z_0)\}$ where $z_0$ is a fresh variable such that $\textit{source}(z_0)=(\alpha,\sigma,z)$.
+\end{example}
+
+We will now define the oblivious and restricted chase, It is defined in \cite{obl_res}.
+
+\subsubsection{The oblivious chase}
+
+\begin{definition}
+An \emph{oblivious chase derivation} for a knowledge base $O= (F,R)$ is a fair derivation $D_{\textbf{O}} = (t_i,F_i)_{i} $ where we only use the operation oblivious application. $(F_i)_i$ is monotonic so we can pose \emph{$\textit{Obl(O)}$} = $\cup_{i \in \N}F_i$.
+We say that the oblivious chase \emph{terminates} if there exists $i \in \N$ such that $F_{i+1} = F_i$. In this case, $\textit{Obl(O)} = F_i$.
+\end{definition}
+
+
+The oblivious chase is called this way because it forgets to check whether the rule is already satisfied... So we will introduce the restricted chase that is less naive because a trigger is applied only if it is not already satisfied.
+
+\subsubsection{The restricted chase}
+
+\begin{definition}
+A \emph{restricted chase derivation} for a knowledge base $O= (F,R)$ is an actively fair derivation $D_{\textbf{res}} = (t_i,F_i)_{i} $ where we use the operation restricted application. $(F_i)_i$ is monotonic so we can pose \emph{$\textit{res(O)}$} = $\cup_{i \in \N}F_i$.
+We say that the restricted chase \emph{terminates} if there exists $i \in \N$ such that $F_{i+1} = F_i$. In this case, $\textit{res(O)} = F_i$.
+\end{definition}
+
+
+
+
+\subsubsection{The core chase}
+
+It has been firstly defined in \cite{core_chase}.
+
+\begin{definition}[Pruning]
+Computing the core of the factbase $F$ is an operation called \emph{pruning}. We will explain in the next section, how we calculate it (in the particular case of Horn-$\mathcal{ALC}$ rules).
+
+\end{definition} 
+
+\begin{definition}[Core chase]
+A \emph{core chase derivation} for a knowledge base $O = (T,F)$ is an actively fair derivation $D_{\textbf{C}} = (t_i,F_i)_{i}$ where we  use the operations restricted application and pruning. The core chase \emph{terminates} on $T$ if there exits $i \in \N$ such that there is not anymore any trigger applicable on $T_i$. In this case, we pose \emph{$\textit{C}(O)$} = $F_i$. Otherwise, if the core chase does not terminate,$\textit{C}(O)$ is undefined.
+\end{definition} 
+
+\begin{theorem}
+The knowledge base $O = (T,F)$ admits a finite universal model if and only if the core chase algorithm terminates on $O$
+\end{theorem}
+
+\begin{proof}
+\cite{core_chase}
+\end{proof}
+
+\subsubsection{Comparaison of the chase algorithms}
+
+An oblivious application is fast but the oblivious chase  can do a lot of uninteresting applications and does not terminate on some trivial knowledge base. 
+\begin{example}
+If we have the knowledge base $O=(\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.A(x,z)$ and $F =  \{A(a,b)\}$, then $\textit{Obl(O)}= \{A(a,b)\}\cup\{A(a,x_i) \mid i \in \N\}$ where $x_i$ are new variables. Indeed, the algorithm uses the triggers $(\alpha, \{x \mapsto a, y \mapsto b\})$, $(\alpha, \{x \mapsto a, y \mapsto x_0\})$,$(\alpha, \{x \mapsto a, y \mapsto x_1\})$, etc...
+So the oblivious algorithm does not stop on $O$ whereas the restricted algorithm stops and $\textit{res(O)} = F$ because at the initial step, there is only one trigger: $(\alpha, \{x \mapsto a, y \mapsto b\})$ and if we pose $\hat \sigma = \{x \mapsto a, y \mapsto b, z \mapsto b\}$ that extends $\sigma$, then $\hat \sigma(R(x,z))=R(a,b) \in F$. So this unique trigger is not active.
+\end{example}
+
+So the restricted chase is better than the oblivious chase but is less fast. Nevertheless, there exists knowledge bases where the restricted chase does not terminate whereas there exists a finite universal model. \begin{example}
+If we have the knowledge base $O=(\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.(A(x,x) \wedge A(y,z))$ and $F =  \{A(a,b)\}$, then the restricted chase will use the active triggers : $(\alpha, \{x \mapsto a, y \mapsto b\})$, $(\alpha, \{x \mapsto b, y \mapsto z_0\})$,$(\alpha, \{x \mapsto z_0, y \mapsto z_1\})$, etc... and so  $\textit{res(O)} = \{A(a,a),A(a,b),A(b,b),A(b,z_0)\} \cup \{A(z_i,z_i),A(z_i,z_{i+1})\mid i \in \N\}$. So the restricted chase does not terminate whereas there exists a universal model $U = \{A(a,a),A(a,b),A(b,b)\}$. The core chase terminates on $O$: at the first step $F_1 = \{A(a,a),A(a,b),A(b,z_0)\}$. At the second step, if we do an active application, $F_2 = \{(a,a),A(a,b),A(b,b),A(b,z_0),A(z_0,z_1)\}$ (if at this step, we will have done a pruning, $F_2 = F_1$ and we will have continued the chase). If at the third step, we compute the core of $F_1$, then $F_2 = U$. There is not anymore any active trigger so the core chase terminates. 
+\end{example}
+The core chase always terminates when there exists a finite universal model but this algorithm is very expensive in time and it is dificult to define the result of the algorithm when there is no finite universal models because the computing factbases are not monotonic in comparaison to the factbases computing by the oblivious and restricted chase.
+
+\section{Horn-$\mathcal{ALC}$}
+
+\subsection{Rules}
+
+\begin{definition}[Horn-$\mathcal{ALC}$ axioms]
+A (Horn-$\mathcal{ALC}$) axiom is an existential rule of the form:
+\begin{align}
+A_1(x) \wedge...\wedge A_n(x) &\rightarrow B(x) \\
+A(x) \wedge R(x,y) &\rightarrow B(y) \\
+A(x) &\rightarrow \exists y.R(x,y) \wedge B(y) \\
+R(x,y) \wedge B(y) &\rightarrow A(x)
+\end{align}
+
+\end{definition}
+
+\begin{definition}
+For a factbase $F$ and a term $t$, we note $C_F(t)$ the set of unary predicates $P$ such that $P(t)\in F$.
+\end{definition}
+
+In the Horn-$\mathcal{ALC}$ theory, the rules create only predicates of arity one or two.
+Hence, we will represent a database $F$ by a labelled graph $G = (V,E)$ where $V = \{t:A_1,...,A_n /t \in \textbf{term}$ and $A_1,...,A_n$ are exactly the elements in $C_F(t)\}$ and $E = \{(t_1,t_2) /t_1,t_2 \in \textbf{term}$ and there exists at least a binary predicate $P$ such that $P(t_1,t_2) \in F$. In this case, we label the edge with exactly the binary predicates $P$ such that $P(t_1,t_2) \in F\}$. For example with $F = \{A(a), B(a),R(a,b),T(a,b),C(b),R(b,z)\}$: \\
+
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm, semithick]
+  \tikzstyle{every state}=[fill=white,draw=none,text=black]
+
+  \node[state]         (A)                    {$a:A,B$};
+  \node[state]         (B) [above right of=A] {$b:C$};
+  \node[state]         (C) [below right of=A] {$z$};
+
+  \path (A) edge              node {R,T} (B)
+        (B) edge              node {R} (C);
+\end{tikzpicture}
+
+\begin{remark}
+We do not represent the predicates of arity greater than 2 in $F$ because they do not really matter. We can also notice that only the edges linking two constants can be labelled with more than one predicate.
+\end{remark}
+
+
+\subsection{Algorithm}
+We fix $O=(R,F)$ a knowledge base for this section where $R$ is a Horn-$\mathcal{ALC}$ rule set.
+
+\begin{definition}
+Let $F'$ be a factbase that has been genered in a core chase derivation of the knowledge base $O$. Let $t_1,t_2$ be two variables appearing in $F'$. we say that $t_1 \prec t_2$ if there exists a predicate $R$ such that $R(t_1,t_2) \in F'$. We write $\prec^+$ to denote the transitive closure of $\prec$.
+\end{definition}
+
+\begin{proposition}
+In the Horn-$\mathcal{ALC}$ theory, let $F'$ be a factbase that has been genered in a core chase derivation of the knowledge base $O$. $\prec^+$ is a strict partial order over the set of variables of $F'$.
+\end{proposition}
+
+\begin{proof}
+\begin{itemize}
+\item $\prec^+$ is transitive by construction
+\item Suppose by contradiction that there exists a variable $x$ such that $x \prec^+ x$. There exists terms $t_1,...,t_n$ such that $x \prec t_1 \prec t_2 \prec ... \prec t_n \prec x$. There exists binary predicates $R_0,...,R_n$ such that $R_0(x,t_1),R_1(t_1,t_2),...,R_n(t_n,x) \in F'$. We show by induction on $i\in \{0,...,n\}$, $H(i)$: "for $1 \leq k \leq i,t_k$ is a variable".
+\begin{itemize}
+\item $H(0)$ is true.
+\item Suppose that $H(i-1)$ is true for $i \in \{1,...,n\}$. We have to show that $t_i$ is a variable. $R_{i-1}(t_{i-1},t_i) \in F$ and $t_{i-1}$ is a variable, so, as the initial factbase is ground, $R_{i-1}(t_{i-1},t_i) \notin F$. So $R_{i-1}(t_{i-1},t_i)$ has been introduced by the axiom 3. As the application of the core-chase algorithm introduced only variables, $t_i$ is a variable. So $H(i)$ is true.
+\item Consequently, $t_1,...,t_n$ are variables.
+\end{itemize}
+Let $y$ be the first variable of the set $\{x,t_1,...,t_n\}$  introduced by the algorithm. There exists $R$ and $z \in \{x,t_1,...,t_n\}$ such that $R(z,y) \in F'$. $R(z,y)$ has been introduced by the axiom 3. As the application of the chase algorithm introduced only fresh variables, $z$ is introduced before $y$. It contradicts the youngness of the variable $y$. Consequently $x \nprec^+ x$, so $\prec^+$ is irreflexive over \textbf{var}.
+\end{itemize}
+\end{proof}
+
+\begin{remark}
+We have shown in the proof that the graph ($\textbf{var}(F')$,$\prec$ ) do not contain any cycle. Therefore this graph is a forest of trees.
+\end{remark}
+
+\begin{definition}[Siblings]
+Let $F'$ be a factbase that has been genered in a core chase derivation of the knowledge base $O$. Two terms $t_1$ and $t_2$ such that $t_1 \neq t_2$ are \emph{siblings} if $C_F(t_1) \subseteq C_F(t_2)$ or $C_F(t_2) \subseteq C_F(t_1)$ and if there exists a term $t$ and a predicate $R$ such that $R(t,t_1) \in F'$ and $R(t,t_2) \in F'$.
+\end{definition}
+
+\begin{definition}[$\mathcal{ALC}$-Pruning]
+Let $F'$ be a factbase that has been genered in a core chase derivation of the knowledge base $O$. Let $\textbf{term(F')} = \{t_1,...t_n\}$ is such that $(t_i \in \textbf{cst} \wedge t_j \in \textbf{var}) \Rightarrow i < j$ and $(t_i \prec^+ t_j \wedge t_i,t_j \in \textbf{var}) \Rightarrow i < j$
+we create an homomorphism $h$ over $F'$.
+For all $i \in \{1,...,n\}$,
+If $t_i$ is a variable already mapped by $h$ on an other term, we do nothing.
+Otherwise, we look at all the siblings $y$ of $t_i$ such that $y$ is a variable and $C_{F'}(y) \subseteq C_{F'}(t_i)$. We define $h(z)$ by induction for every $z$ such that $y \prec^+ z$ or $y = z$:
+\begin{itemize}
+\item We pose $h(y) = t_i$.
+\item If $h(z)$ is defined and there exists $z'$ such that $z \prec z'$, then there exists a binary predicate $R$ such that $R(z,z') \in F'$. There are two cases.
+\begin{itemize}
+\item If there exists a term $t$ such that $R(h(z),t) \in F'$ and $C_{F'}(t) \subseteq C_{F'}(z')$ or $C_{F'}(z') \subseteq C_{F'}(t)$ : We pose $h(z') = t$.
+\item Otherwise, we pose $h(z') = z'$. 
+\end{itemize}
+\end{itemize}
+For all variable $x$ of $F'$ not mapped by h, we pose $h(x) = x$. We pose \emph{$\textit{prune}(F')$} = $h(F')$.
+\end{definition}
+
+We will now consider that the core chase uses the $\mathcal{ALC}$-Pruning instead of the classical pruning.
+
+For example, in the figure below, the $\mathcal{ALC}$-pruning of the factbase of the left gives the factbase of the right due to the homorphism $h = \{x_1 \mapsto x_1, x_2 \mapsto x_1, x_3 \mapsto x_3\}$.
+
+\begin{center}
+\begin{tikzpicture}[scale=0.2]
+\tikzstyle{every node}+=[inner sep=0pt]
+\draw [white] (14.2,-48.1) circle (3);
+\draw (14.2,-48.1) node {$a$};
+\draw [white] (6.2,-38.6) circle (3);
+\draw (6.2,-38.6) node {$x_1:\mbox{ }A,B$};
+\draw [white] (23.4,-39.2) circle (3);
+\draw (23.4,-39.2) node {$x_2:\mbox{ }A$};
+\draw [white] (23.4,-26.8) circle (3);
+\draw (23.4,-26.8) node {$x_3:\mbox{ }D$};
+\draw [white] (61.7,-50.7) circle (3);
+\draw (61.7,-50.7) node {$a$};
+\draw [white] (51.9,-39.2) circle (3);
+\draw (51.9,-39.2) node {$x_1:\mbox{ }A,B$};
+\draw [white] (51.9,-26.8) circle (3);
+\draw (51.9,-26.8) node {$x_3:\mbox{ }D$};
+\draw [black] (12.27,-45.81) -- (8.13,-40.89);
+\fill [black] (8.13,-40.89) -- (8.27,-41.83) -- (9.03,-41.18);
+\draw (10.75,-41.91) node [right] {$R_1$};
+\draw [black] (16.36,-46.01) -- (21.24,-41.29);
+\fill [black] (21.24,-41.29) -- (20.32,-41.48) -- (21.02,-42.2);
+\draw (20.29,-44.13) node [below] {$R_1$};
+\draw [black] (23.4,-36.2) -- (23.4,-29.8);
+\fill [black] (23.4,-29.8) -- (22.9,-30.6) -- (23.9,-30.6);
+\draw (23.9,-33) node [right] {$R_2$};
+\draw [black] (59.75,-48.42) -- (53.85,-41.48);
+\fill [black] (53.85,-41.48) -- (53.98,-42.42) -- (54.75,-41.77);
+\draw (57.35,-43.51) node [right] {$R_1$};
+\draw [black] (51.9,-36.2) -- (51.9,-29.8);
+\fill [black] (51.9,-29.8) -- (51.4,-30.6) -- (52.4,-30.6);
+\draw (52.4,-33) node [right] {$R_2$};
+\end{tikzpicture}
+\end{center}
+
+\begin{theorem} 
+Let $F_0$ be a factbase that has been genered in a core chase derivation of the knowledge base $O$. $\mathcal{ALC}\textit{-Prune}(F_0)$ is the core of the factbase $F_0$.
+\end{theorem}
+
+\begin{proof}
+\begin{itemize}
+\item The $\mathcal{ALC}$-pruning algorithm only take off facts of the factbase. Consequently, $\textit{prune}(F_0) \subseteq F_0$.
+\item We consider the homorphism $h:F_0 \to \textit{prune}(F_0)$ created during the $\mathcal{ALC}$-pruning algorithm. For $x \in \textbf{var}(F_0)$, suppose that $h(x) \neq x$. According to the $\mathcal{ALC}$-pruning algorithm, $x$ has been erased \todo{à préciser}. So $x \notin \textbf{var}(\textit{prune}(F_0))$. So ${h}_{|\textit{Prune}(F_0)}=id_{|\textit{Prune}(F_0)}$. We have shown that $h$ is a retract so $\textit{prune}(F_0)$ is a retract of $F_0$.
+\item Suppose by contradiction that $\textit{prune}(F_0)$ is not a core. There exists $F_0' \subsetneq \textit{prune}(F_0)$ such that $F_0'$ is a retract of $\textit{prune}(F_0)$. There exists then a retract $h_1: Prune(F_0) \to F_0'$, $var(prune(F_0))\setminus var(F_0') \neq \emptyset$. Let $x$ be a $\prec^+$-minimal variable of this set. $x$ is a variable, so has been introduced by the $\mathcal{ALC}$-pruning algorithm due to the axiom 3. So there exists a term $t$ and a relation $R$ such that $R(t,x) \in F_0$. By minimality of $x$, $t \in F_0'$. So $h(t) = t$, so $h(R(t,x)) = R(t,h(x))$. $x \notin F_0'$ and $h(x) \in F_0'$ so $h(x) \neq x$. Let $A \in C_{F_0}(x)$, $x \in var(prune(F_0))$ so $A(x) \in prune(F_0)$. $h(A(x)) \in Prune(F_0)$ so $A(h(x)) \in F_0$ so $A \in C_{F_0}(h(x))$. Consequently, $h(x)$ is a sibling of $x$ in $F_0$. So the $\mathcal{ALC}$-pruning algorithm should have suppress $x$ or $h(x)$, so $x \notin Prune(F_0)$ or $h(x) \notin Prune(F_0)$: contradiction. So $prune(F_0)$ is a core of $F_0$
+\end{itemize}
+To conclude, \emph{prune($F_0$)} is a core of the factbase $F_0$.
+\end{proof}
+
+\begin{theorem} 
+The knowledge base $O = (T,F)$ admits a finite universal model if and only if the core chase algorithm terminates on $O$
+\end{theorem}
+
+\begin{proof}
+We have shown that on a factbase of the theory, our $\mathcal{ALC}$-pruning operation was computing a core of the factbase. Consequently, the theorem 2.1 concludes the proof. 
+\end{proof}
+
+
+\bibliographystyle{plain}
+\bibliography{sample}
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+tree-like structure 
+
+\begin{definition}[Entailment]
+A factbase F \emph{entails} a factbase F' (often noted F $\models F'$) if for all model M de T, M is a model of F'. 
+\end{definition}
+
+Let $\prec$ be a strict total order over the set of variables. A variable x occuring in a factbase F is \emph{superfluous} if there exists two variables y and z such that:
+\begin{itemize}
+\item For all unary predicate P such that $P(x) \in F$, $P(y) \in F$.
+\item For all binary predicate R such that $R(z,x) \in F$, $R(z,y) \in F$
+\end{itemize}
+The \emph{pruning sequence} of a factbase F is the sequence $(F_i)_{i \in \{1,...,n\}}$ of factbases where:
+\begin{itemize}
+\item $F_1 = F$;
+\item for all $i \in \{2,...,n\}$, $F_i$ is the set obtained when we remove every fact of $F_{i-1}$  that contains the smallest superfluous variable (smallest according to $\prec$).
+\item $F_n$ does not contain any superfluous variables.
+\end{itemize}
+We pose \emph{prune(F)} = $F_n$.
