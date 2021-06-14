@@ -357,7 +357,7 @@ In the Horn-$\mathcal{ALC}$ theory, let $F'$ be a factbase that has been genered
 \begin{proof}
 \begin{itemize}
 \item $\prec^+$ is transitive by construction
-\item Suppose by contradiction that there exists a variable x such that $x \prec^+ x$. There exists terms $t_1,...,t_n$ such that $x \prec t_1 \prec t_2 \prec ... \prec t_n \prec x$. There exists binary predicates $R_0,...,R_n$ such that $R_0(x,t_1),R_1(t_1,t_2),...,R_n(t_n,x) \in F'$. We show by induction on $i\in \{0,...,n\}$, $H(i)$: "for $1 \leq k \leq i,t_k$ is a variable".
+\item Suppose by contradiction that there exists a variable $x$ such that $x \prec^+ x$. There exists terms $t_1,...,t_n$ such that $x \prec t_1 \prec t_2 \prec ... \prec t_n \prec x$. There exists binary predicates $R_0,...,R_n$ such that $R_0(x,t_1),R_1(t_1,t_2),...,R_n(t_n,x) \in F'$. We show by induction on $i\in \{0,...,n\}$, $H(i)$: "for $1 \leq k \leq i,t_k$ is a variable".
 \begin{itemize}
 \item $H(0)$ is true.
 \item Suppose that $H(i-1)$ is true for $i \in \{1,...,n\}$. We have to show that $t_i$ is a variable. $R_{i-1}(t_{i-1},t_i) \in F$ and $t_{i-1}$ is a variable, so, as the initial factbase is ground, $R_{i-1}(t_{i-1},t_i) \notin F$. So $R_{i-1}(t_{i-1},t_i)$ has been introduced by the axiom 3. As the application of the core-chase algorithm introduced only variables, $t_i$ is a variable. So $H(i)$ is true.
