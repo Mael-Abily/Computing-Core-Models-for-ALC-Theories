@@ -457,7 +457,7 @@ There can still have siblings between two constants.
 
 \begin{proof}
 Let $G$ be a factbase that occured in a core chase derivation of the knowledge base $O$. 
-Suppose by contradiction that there exists a term $t$ and a variable $x$ such that $t$ is a powerfull sibling of $x$ in $\Merge(G)$: there exists a term $t'$ and a binary predicate $R$ such that $R(t',x),R(t',t) \in \Merge(G)$. There is still a such sibling in $\Merge(G)$ only if there exists a factbase $G^1$ computing during the merging such that $x$ has already been studied by the algorithm, and there exists a variable $y \in \Vars(G^1)$ that will be merged on $t$ and such that $R(y,x) \in G^1$. There exists then a term $t_0$ and a binary predicate $S$ such that $S(t_0,t'),S(t_0,y) \in G^1$. We note $G^2$ the factbase obtained after the merging of $t'$ and $y$. $G^1$ is the left figure and $G^2$ is the right figure (we do not represent all the graphs):
+Suppose by contradiction that there exists a term $t$ and a variable $x$ such that $t$ is a powerfull sibling of $x$ in $\Merge(G)$: there exists a term $t'$ and a binary predicate $R$ such that $R(t',x),R(t',t) \in \Merge(G)$. There is still a such sibling in $\Merge(G)$ only if there exists a factbase $G^1$ computing during the merging such that $x$ has already been studied by the algorithm, and there exists a variable $y \in \Vars(G^1)$ that will be merged on $t'$ and such that $R(y,x) \in G^1$. There exists then a term $t_0$ and a binary predicate $S$ such that $S(t_0,t'),S(t_0,y) \in G^1$. We note $G^2$ the factbase obtained after the merging of $t'$ and $y$. $G^1$ is the left figure and $G^2$ is the right figure (we do not represent all the graphs):
 
 \begin{center}
 \begin{tikzpicture}[scale=0.2]
