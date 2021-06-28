@@ -43,15 +43,86 @@
 \newcommand{\Merge}{\textit{Merge}}
 \newcommand{\Depth}{\textit{depth}}
 \newcommand{\Appl}{\textbf{appl}}
+\newcommand{\father}{\textbf{father}}
+\newcommand{\Tree}{\textit{Tree}}
 
 \begin{document}
 \maketitle						% Genere le titre
 
 
 
+\section{Introduction}
+
+An important problem in database is the conjunctive query entailment. This problem can be described in a first order logic background: Given a knowledge base $O = (R,F)$ where $F$ is a set of conjunctive formulas (that are formulas constructed only with conjunction and existential quantification) and $R$ is a set of  rules (that are, if $\vec u$ represents a tuple of variables, formulas of the form $\forall \vec x.\forall \vec y.( A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z))$), and given a query $Q$ (that is a conjunctive formula), determine if the knowledge base $O$ entails the query $Q$. We usually use reasoning algorithms to answer this problem. We can notice that in practice, a lot of formulas can be express via conjunctive formulas.
+
+\begin{example}
+For the knowledge base $O$ composed of the set of conjunctive formulas $F = \{\textit{Father}(\textit{Michel}) \}$ and the set of rules $R= \{\forall x. \textit{Father}(x) \rightarrow \exists y. \textit{IsTheSonOf}(y,x) \}$, and for the query $Q = \exists y. \textit{IsTheSonOf}(y,Michel)$, the knowledge base $O$ entails $Q$.
+\end{example}
+
+By definition, a knowledge base $O$ entails a query $Q$ if every  model of $O$ is a model of $Q$. It is not practical because a knowledge base can have an infinite number of model.
+
+To deal with this problem, we can compute an universal model of the knowledge base $O$. That is a model of $O$ that is entailed by all the models of $O$. If a such model $U$ exists, we just need to show that $U$ entails $Q$ to conclude that $O$ entails $Q$. Hence, to solve query entailment, we just have to compute a finite universal model $U$ for a given input knowledge base and look if $U$ entails $Q$.
+
+To compute these models, we can use algorithms called the chase. We will present in this document the oblivious chase, the restricted chase and then the core chase. The last chase is the best in the sense of it terminates if and only if there exists a finite universal model. 
+
+Nevertheless, it is the slowest so it it is never used for practical applications.
+
+Therefore, we will focus on a restricted type of knowledge base $O=(R,F)$ where the set of conjunctive formulas $F$ is ground (that is there is no variable in the formula) and where the rule contained in $R$ are Horn-$\mathcal{ALC}$ axioms. It is an interesting restriction because we can represent the results of the chase by a tree.
+
+We will create a quicker chase, that we called the merge chase, that would produce the same output than the core chase. It is based on the idea that in a tree, there exists a brother relation between the nodes (that is two nodes are brothers if they have the same father) and we will see that, in some conditions, a brother of a node can be merged on this node like in the figure below where $y$ is a brother of $t'$ and is merged on it.
 
 
-The goal is to answer a query with a given database and a given set of rules by computing a universal model with an algorithm called the core chase. We are dealing with a restriction of FOL (Horn-$\mathcal{ALC}$ axioms).
+\begin{center}
+\begin{tikzpicture}[scale=0.2]
+\tikzstyle{every node}+=[inner sep=0pt]
+
+\draw [white] (17.1,-35.9) circle (3);
+\draw (17.1,-35.9) node {$t_0$};
+\draw [white] (10.1,-24.1) circle (3);
+\draw (10.1,-24.1) node {$t'$};
+\draw [white] (24.1,-24.1) circle (3);
+\draw (24.1,-24.1) node {$y$};
+\draw [white] (24.1,-12.4) circle (3);
+\draw (24.1,-12.4) node {$x$};
+\draw [white] (10.1,-12.4) circle (3);
+\draw (10.1,-12.4) node {$t$};
+\draw [white] (30.7,-24.6) circle (3);
+\draw [white] (50.4,-24.6) circle (3);
+\draw [white] (59.7,-36.8) circle (3);
+\draw (59.7,-36.8) node {$t_0$};
+\draw [white] (59.7,-25.3) circle (3);
+\draw (59.7,-25.3) node {$t'$};
+\draw [white] (53.4,-13.2) circle (3);
+\draw (53.4,-13.2) node {$t$};
+\draw [white] (65.4,-13.2) circle (3);
+\draw (65.4,-13.2) node {$x$};
+\draw [black] (15.57,-33.32) -- (11.63,-26.68);
+\fill [black] (11.63,-26.68) -- (11.61,-27.62) -- (12.47,-27.11);
+\draw (14.25,-28.75) node [right] {};
+\draw [black] (10.1,-21.1) -- (10.1,-15.4);
+\fill [black] (10.1,-15.4) -- (9.6,-16.2) -- (10.6,-16.2);
+\draw (10.6,-18.25) node [right] {};
+\draw [black] (18.63,-33.32) -- (22.57,-26.68);
+\fill [black] (22.57,-26.68) -- (21.73,-27.11) -- (22.59,-27.62);
+\draw (21.25,-31.25) node [right] {};
+\draw [black] (24.1,-21.1) -- (24.1,-15.4);
+\fill [black] (24.1,-15.4) -- (23.6,-16.2) -- (24.6,-16.2);
+\draw (24.6,-18.25) node [right] {};
+\draw [black] (33.7,-24.6) -- (47.4,-24.6);
+\fill [black] (47.4,-24.6) -- (46.6,-24.1) -- (46.6,-25.1);
+\draw [black] (59.7,-33.8) -- (59.7,-28.3);
+\fill [black] (59.7,-28.3) -- (59.2,-29.1) -- (60.2,-29.1);
+\draw (60.2,-31.05) node [right] {};
+\draw [black] (58.31,-22.64) -- (54.79,-15.86);
+\fill [black] (54.79,-15.86) -- (54.71,-16.8) -- (55.6,-16.34);
+\draw (57.24,-18.11) node [right] {};
+\draw [black] (60.98,-22.59) -- (64.12,-15.91);
+\fill [black] (64.12,-15.91) -- (63.33,-16.42) -- (64.23,-16.85);
+\draw (63.26,-20.3) node [right] {};
+\end{tikzpicture}
+\end{center}
+
+We will then try to extend the merge chase on other type of knowledge bases.
 
 \tableofcontents					% si on veut une table des matieres
 \section{Background}
@@ -62,7 +133,7 @@ We only define what we need in first order logic but we do not redefine basics (
 
 \subsubsection{Syntax}
 
-We considered a set of variables \Vars\ (often noted $x,y,x_{1},\ldots$), a set of constants \Csts\ (often noted $a,b,c,c_{1},\ldots$),and a set of predicates \Preds\ $(P,Q,R,P_{1},\ldots)$. \Csts, \Vars, and \Preds\ are pairwise disjoint.\ A \emph{term}  (often noted $t,t_{1},\ldots$) is a variable or a constant. We note \Terms\ the set of terms. We write \emph{$\textit{Ar}(P)$} to denote the arity of the predicate $P$. 
+We considered a set of variables \Vars\ (often noted $x,y,x_{1},\ldots$), a set of constants \Csts\ (often noted $a,b,c,c_{1},\ldots$), and a set of predicates \Preds\ $(P,Q,R,P_{1},\ldots)$. \Csts, \Vars, and \Preds\ are pairwise disjoint. A \emph{term}  (often noted $t,t_{1},\ldots$) is a variable or a constant. We note \Terms\ the set of terms. We write \emph{$\textit{Ar}(P)$} to denote the arity of the predicate $P$. 
 
 \begin{definition}
 If $t_1,\ldots,t_n$ are terms and $P$ is a predicate with $Ar(P) = n$, then $P(t_{1},\ldots,t_{n})$ is an \emph{atom}. The atom $P(t_{1},\ldots,t_{n})$ is \emph{ground} if $t_1,\ldots,t_n$ are constants.
@@ -71,6 +142,8 @@ If $t_1,\ldots,t_n$ are terms and $P$ is a predicate with $Ar(P) = n$, then $P(t
 \begin{definition}
 A \emph{factbase} $F$ is an existentially closed conjunction of atoms, that is a formula of the form $\exists x_{1},\ldots,x_{n}.P_{1}(t_{1}^{1},\ldots,t_{k_{1}}^{1})\land \ldots\land P_{m}(t_{1}^{m},\ldots,t_{k_{m}}^{m})$ where $t_i^j$ are terms and $P_i$ are predicates. A factbase is \emph{ground} if each of its atoms is ground.
 \end{definition}
+
+In the introduction, we talked about conjunctive formulas. We can show that a conjunctive formula is always equivalent to a factbase.
 
 In some articles, the factbase are always considered as ground but in this document, we consider factbases that may not be ground. Consequently, a  boolean conjonctive query will be a factbase, so we will only talk about factbases and not introduce the notion of query.
 
@@ -93,12 +166,11 @@ A \emph{substitution} $\sigma:X \to \Terms$ is a function where X is a set of va
 \item if $x \in \Vars \setminus X$, $\sigma(x) = x$;
 \item if $f = P(t_1,\ldots,t_n)$ is an atom, then $\sigma(f) = P(\sigma(t_1),\ldots,\sigma(t_n))$; and
 \item if $F = \{f_1,\ldots,f_n\}$ is a factbase, then $\sigma(F) = \{\sigma(f_1),\ldots,\sigma(f_n)\}$.
-\todo{Consider that we may have to apply substitutions to rules}
 \end{itemize}
 \end{definition}
 
 \begin{definition}
-For two factbases $F$ and $F'$, a \emph{homomorphism} from $F$ to $F'$ is a substitution $\sigma:var(F) \to term(F')$ where $\sigma(F) \subseteq F'$.
+For two factbases $F$ and $F'$, a \emph{homomorphism} from $F$ to $F'$ is a substitution $\sigma:var(F) \to term(F')$ where $\sigma(F) \subseteq F'$. We say that a variable $x$ is \emph{map} to $\sigma(x)$.
 \end{definition}
 
 \begin{definition}
@@ -116,10 +188,10 @@ We identify sets of facts that are unique up to isomorphism.
 %is a bijective homomorphism but not an isomorphism.
 %\end{remark}
 
-The following theorem follows from results in \cite{base}.
+The following theorem has been proved in (\cite{base},theorem 6.2.3).
 
-\begin{theorem}[Homomorphism Theorem]
-A factbase $F$ \emph{entails} another factbase $Q$ (often noted $F \models Q$) if and only if there exists a homomorphism from $Q$ to $F$.
+\begin{theorem}[Homomorphism Theorem] \label{hom_thm}
+A factbase $F$ \emph{entails} another factbase $Q$ if and only if there exists a homomorphism from $Q$ to $F$.
 \end{theorem}
 
 \begin{example}
@@ -127,7 +199,7 @@ The factbase $F = \{P(b,a),A(x)\}$ entails the factbase $Q = \{P(x,a),P(y,z)\}$ 
 \end{example}
 
 \begin{remark}
-Given two factbases $F$ and $Q$, the problem to know if $F \models Q$ is NP-complete \cite{NP}. 
+Given two factbases $F$ and $Q$, the problem to know if $F \models Q$ is NP-complete (\cite{NP}, theorem 7). 
 \end{remark}
 
 
@@ -173,17 +245,18 @@ The cores of a finite factbase F are unique up to isomorphism.
 Hence, we speak of ``the'' core of a factbase.
 
 \begin{example}
-$F' = \{B(x,y),R(y,z)\}$ is the core of $F = \{B(x,y),R(y,z),B(x,w),R(w,z)\}$ because:
+$F_1 = \{B(x,y),R(y,z)\}$ is the core of $F = \{B(x,y),R(y,z),B(x,w),R(w,z)\}$ because:
 \begin{itemize}
-\item $F' \subseteq F$;
-\item $\{x \mapsto x, y \mapsto y, z \mapsto z, w \mapsto y\}$ is a homomorphism from $F$ to $F'$, so $F'$ is a retract of $F$;
-\item all strict subsets of $F'$ are not retracts of $F'$.
+\item $F_1 \subseteq F$;
+\item $\{x \mapsto x, y \mapsto y, z \mapsto z, w \mapsto y\}$ is a homomorphism from $F$ to $F_1$, so $F_1$ is a retract of $F$;
+\item all strict subsets of $F_1$ are not retracts of $F_1$.
 \end{itemize}
+$F_2 = \{B(x,w),R(w,z)\}$ is also the core of $F$ and is indeed isomorphe to $F_1$ due to the homomorphism $\{x \mapsto x, y \mapsto w, z \mapsto z\}$ .
 \end{example}
 
-\begin{proposition}
-A factbase $F$ is a core $\Leftrightarrow$ every homomorphism $\sigma$ from $F$ to $F$ is a bijection.
-\end{proposition}
+%\begin{proposition}
+%A factbase $F$ is a core $\Leftrightarrow$ every homomorphism $\sigma$ from $F$ to $F$ is a bijection.
+%\end{proposition} 
 
 %\begin{proof}
 %We show it by double-implication. \\
@@ -198,7 +271,7 @@ A factbase $F$ is a core $\Leftrightarrow$ every homomorphism $\sigma$ from $F$ 
 \subsubsection{Syntax}
 
 \begin{definition}
-Let $\vec x$, $\vec y$, and $\vec z$ be some tuples of variables that are pairwise disjoint. An \emph{(existential) rule} $R$ is a first-order formula	of the form $$\forall \vec x.\forall \vec y.( A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z))$$ where $A$ and $B$ are conjunctions of atoms. We define \emph{$\textit{body}(R)$} = $A$ and \emph{$\textit{head}(R)$} = $B$. We also note \emph{$\textit{ev}(R)$} the set $\vec{z}$ of existential variables of the rule.
+Let $\vec x$, $\vec y$, and $\vec z$ be some tuples of variables that are pairwise disjoint. An \emph{(existential) rule} $\alpha$ is a first-order formula	of the form $$\forall \vec x.\forall \vec y.( A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z))$$ where $A$ and $B$ are conjunctions of atoms. We define \emph{$\textit{body}(\alpha)$} = $A$ and \emph{$\textit{head}(\alpha)$} = $B$. We also note \emph{$\textit{ev}(\alpha)$} the set $\vec{z}$ of existential variables of the rule.
 \end{definition}
 We omit the universal quantifiers when representing existential rules.
 \begin{definition}
@@ -214,35 +287,40 @@ A factbase $F$ \emph{entails} a rule $\alpha$ if each interpretation satisfying 
 \end{definition}
 
 \begin{theorem}
-A factbase $F$ \emph{entails} a rule $\alpha = A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$ if and only if for every homomorphism $\sigma: \textbf{var}(A) \to \textbf{term}(F)$ from $A$ to $F$, there exists an extension of $\sigma$ that is a homomorphism from $B$ to $F$.
+A factbase $F$ \emph{entails} a rule $\alpha = A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$ if and only if for every homomorphism $\sigma$ from $A$ to $F$, there exists an extension of $\sigma$ that is a homomorphism from $B$ to $F$.
 \end{theorem}
 
 
 
 \begin{definition}[Universal model]
 A factbase $M$ is a \emph{model} for a knowledge base $O = (R,F)$ if $M \models F$ and $M \models R$.  A model $U$ for a knowledge base $O$ is \emph{universal} if for
-every model $M$ of $O$, there exists a homomorphism $h$ from U to M.
+every model $M$ of $O$, $M \models U$.
 \end{definition}
+
+
+\begin{example} We pose $O = (\{\alpha\},F)$ where $\alpha = A(x) \rightarrow \exists z.R(x,z) \wedge A(z)$ and $F = \{A(b)\}$. $U = \{A(b),R(b,x_0)\}\cup \{A(x_i)\mid i \in \N\}\cup \{R(x_i,x_{i+1}) \mid i \in \N\}$ is a universal model of $O$. This knowledge base does not admit finite universal models.
+\end{example}
 
 \begin{definition}[Entailment]
 A knowledge base $O$ \emph{entails} a factbase B (often noted $O \models B$) if for each model $M$ of $O$, $M \models B$.
 \end{definition}
 
-\begin{example} We pose $O = (\{\alpha\},F)$ where $\alpha = A(x) \rightarrow \exists z.R(x,z) \wedge A(z)$ and $F = \{A(b)\}$. $U = \{A(b),R(b,x_0)\}\cup \{A(x_i)\mid i \in \N\}\cup \{R(x_i,x_{i+1}) \mid i \in \N\}$ is a universal model of $O$. This knowledge base does not admit finite universal models.
-\end{example}
+
 
 
 \begin{proposition}
 A knowledge base $O$ entails a factbase $B$ if there exists a universal model $U$ such that $U \models B$.
 \end{proposition}
 
-An important problem that this document has to deal with is: Given a knowledge base $O=(R,F)$ and a factbase $Q$,  does $O \models Q$? It  is  well-known  that  this  problem  is  undecidable \cite{NP}. \todo{Here, you can cite this paper ``The Implication Problem for Data Dependencies.''}
+An important problem that this document has to deal with is: Given a knowledge base $O=(R,F)$ and a factbase $Q$,  does $O \models Q$? It  is  well-known  that  this  problem  is  undecidable (\cite{NP2}, theorem 4). 
 
 
 
 \subsection{The chase}
 
 The process of applying rules on a factbase in order to infer more knowledge is called forward chaining.   Forward  chaining  in  existential  rules  is  usually achieved  via  a  family  of  algorithms  called the  chase. It can be seen as a two-steps process. It first repeatedly applies rules to the set of facts (and eventually computes sometimes the core to supress redundant facts). Then it looks for an answer to the query in this saturated set of facts. This saturated set of facts is a universal model of the knowledge base. The chase is sound and complete; so it must be non-terminating since the problem of entailment is undecidable.
+
+To determine how we apply a rule to a set of fact, we introduce the notion of trigger:
 
 \begin{definition}[Trigger]
 Let $T$ be a rule set, $\alpha$ be a rule, $\sigma$ be a substitution, and $F$ be a factbase. The tuple $t = (\alpha,\sigma)$ is an \emph{oblivious trigger} for $F$ (or $\alpha$ is \emph{applicable} on $F$ via $\sigma$) if: 
@@ -254,24 +332,25 @@ The tuple $t = (\alpha,\sigma)$ is a \emph{restricted trigger} if $t$ is an obli
 
 \end{definition} 
 
-The chase will considere oblivious triggers to infer new knowledge from a initial factbase. We explain now how it would apply an oblivious trigger, giving rise to the notion of application. 
+Notice that a restricted trigger is also an oblivious trigger. So future definitions that are dealing with oblivious trigger, deal also with restricted trigger.
+
+The chase will considere oblivious triggers to infer new knowledge from an initial factbase. We explain now how it would apply an oblivious trigger, giving rise to the notion of application. 
 
 \begin{definition}[application]
-Let $t = (\alpha,\sigma)$ be an oblivious trigger of the factbase $F$. Let $\hat \sigma$ be a substitution that extends $\sigma$ over $\Vars(\textit{Head}(\alpha))$ such that for $y \in \textit{ev}(R)$, $\hat \sigma(y) = y_t$ where $y_t$ is a fresh variable unique with respect to the oblivious trigger $t$ and the variable $y$.
-The factbase $\Appl(F,t)=F \cup \hat \sigma(\textit{Head}(\alpha))$ is called an \emph{application} on the factbase $F$ through the oblivious trigger $t = (\alpha,\sigma)$.\todo{I reckon that the notion of application can be defined at the same time for oblivious and restricted triggers.}
+Let $t = (\alpha,\sigma)$ be an oblivious trigger of the factbase $F$. We pose \emph{$\sigma^s$} the substitution that extends $\sigma$ over $\Vars(\textit{Head}(\alpha))$ such that for $y \in \textit{ev}(R)$, $\sigma^s(y) = y_t$ where $y_t$ is a fresh variable unique with respect to the oblivious trigger $t$ and the variable $y$.
+The factbase $\Appl(F,t)=F \cup \sigma^s(\textit{Head}(\alpha))$ is called an \emph{application} on the factbase $F$ through the oblivious trigger $t = (\alpha,\sigma)$.
 \end{definition}
 
 \begin{example}. If $\alpha = A(x,y) \rightarrow \exists z.B(x,z)$, $F = \{A(b,c)\}$, and $\sigma = \{x \mapsto b, y \mapsto c \}$ then $(\alpha,\sigma)$ is a restricted trigger for $F$. $\Appl(F,(\alpha,\sigma)) = \{A(b,c),B(b,z_{(\alpha,\sigma)})\}$ where $z_{(\alpha,\sigma)}$ is a fresh variable.
 \end{example}
 
 \begin{definition}[Derivation]
-An \emph{oblivious derivation} (respectively a \emph{restricted derivation}) from a knowledge base $O= (F,R)$ is a (possibly infinite) sequence $D=F_0,t_1,F_1,t_2,F_2,\ldots$ where $F_i$ are factbases pairwise different, $t_i$ are oblivious triggers (resp. restricted triggers), $F_0 = F$, and for $i >0$, $F_{i}= \Appl(F_{i-1},t_i)$ is obtained by an application.
-\todo{Discuss definition.}
+An \emph{oblivious derivation} (respectively a \emph{restricted derivation}) from a knowledge base $O= (F,R)$ is a (possibly infinite) sequence $D=F_0,t_1,F_1,t_2,F_2,\ldots$ where $(F_i)_{i \in \N}$ are factbases such that $F_i \subsetneq F_{i+1}$, $t_i$ are oblivious triggers (resp. restricted triggers), $F_0 = F$, and for $i >0$, $F_{i}= \Appl(F_{i-1},t_i)$ is obtained by an application.
 \end{definition}
 
 
 \begin{definition}[Fairness]
-The oblivious (resp. restricted) derivation $D=F_0,t_1,F_1,t_2,F_2,\ldots$ is \emph{fair} if for every $i$ and every oblivious (resp. restricted) trigger $t$ applicable on $F_i$, there exists $k > i$ such that $t$ is applied on $F_{k-1}$ (resp. $t$ is not anymore a restricted trigger on $F_k$).
+The oblivious (resp. restricted) derivation $D=F_0,t_1,F_1,t_2,F_2,\ldots$ is \emph{fair} if for every $i$ and every oblivious (resp. restricted) trigger $t$ applicable on $F_i$, there exists $k \geq i$ such that $\Appl(F_{k},t_k) = F_k$ (resp. $t$ is not anymore a restricted trigger on $F_k$).
 \end{definition}
 
 A fair derivation garantees that we consider every possible application. An easy way to have a fair derivation is to do a breadth-first search (BFS) on the terms.
@@ -284,12 +363,25 @@ We will now define the oblivious and restricted chase, It is defined in \cite{ob
 \begin{definition}
 An \emph{oblivious chase} (resp. a restricted chase) for a knowledge base $O= (F,R)$ is a fair oblivious (resp. restricted) derivation $D=F_0,t_1,F_1,t_2,F_2,\ldots$ $F_0 \subseteq F_1 \subseteq F_2 \subseteq \ldots$ so we can pose \emph{$\textit{Obl(O)}$} = $\cup_{i \in \N}F_i$ (resp. \emph{$\textit{Res(O)}$} = $\cup_{i \in \N}F_i$).
 We say that the oblivious (resp. restricted) chase \emph{terminates} if $\textit{Obl(O)}$ (resp. $\textit{Res(O)}$) is finite.
-\todo{Discuss: the restricted chase admits many different results.}
 \end{definition}
 
+We can notice that the result of the oblivious chase on a knowledge base is unique up to isomorphism whereas the result of the restricted chase really depends on the order of the application of the rules.
 
-The oblivious chase is called this way because it forgets to check whether the rule is already satisfied\ldots The restricted chase is less naive because a restricted trigger is applied only if it is not already satisfied.
-\todo{Discuss: this is an interesting intuition that needs to be explained a bit better.}
+The oblivious chase  can do a lot of applications that are useless: 
+\begin{example}
+Suppose that we have the knowledge base $O=(\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.A(y,z) \wedge A(z,y)$ and $F =  \{A(a,b)\}$. An oblivious chase derivation is $F_0,t_1,F_1,t_2,F_2,...$ where $F_0 = F$, $t_1=(\alpha,\{x \mapsto a, y \mapsto b\})$, $F_1=\{A(a,b),A(b,z_{t_1}),A(z_{t_1},b)\}$, $t_2=(\alpha,\{x \mapsto b, y \mapsto z_{t_1}\})$, $F_2=\{A(a,b),A(b,z_{t_1}), \\ A(z_{t_1},b), A(z_{t_1},z_{t_2}), A(z_{t_2},z_{t_1})\}$, \ldots\ It will never terminate because each new atom brings new rule applications. So the oblivious chase does not terminate on $O$ whereas the restricted chase terminates. A restricted chase derivation is $F_0,t_1,F_1$ where $F_0 = F$, $t_1=(\alpha,\{x \mapsto a, y \mapsto b\})$, and $F_1=\{A(a,b),A(b,z_{t_1}),A(z_{t_1},b)\}$. This derivation is fair because there is not anymore any restricted trigger for $F_1$. We have $\textit{Res(O)} = F_1$.
+\end{example}
+
+
+
+The oblivious chase is called this way because it can make naive applications (that is $F_i \vDash F_{i+1}$): in the previous example, $F_1 \models F_2$. The restricted chase is less naive because a restricted trigger is applied only if it really adds information (that is $F_i \nvDash F_{i+1}$).
+
+It is well known that:
+
+\begin{theorem}
+For a knowledge base $O$, $\textit{Obl}(O)$ and $\textit{Res}(O)$ are universal models of $O$.
+\end{theorem}
+
 
 
 \subsubsection{The core chase}
@@ -314,7 +406,7 @@ A \emph{core chase} for a knowledge base $O= (R,F)$ is a fair core derivation $D
 Otherwise, if the core chase does not terminate,$\textit{C}(O)$ is undefined.
 \end{definition}
 
-The result of the core chase is unique.
+We can notice that the result of the core chase on a knowledge base is unique up to isomorphism
 
 The following theorem has been proven in (\cite{core_chase}, theorem 7)
 
@@ -322,30 +414,22 @@ The following theorem has been proven in (\cite{core_chase}, theorem 7)
 The knowledge base $O = (R,F)$ admits a finite universal model if and only if the core chase algorithm terminates on $O$.
 \end{theorem}
 
-\subsubsection{Comparaison of the chase algorithms}
 
-The oblivious chase  can do a lot of uninteresting applications and does not terminate on some trivial knowledge base. 
-\begin{example}
-If we have the knowledge base $O=(\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.A(y,z) \wedge A(z,y)$ and $F =  \{A(a,b)\}$, then the oblivious chase must use the triggers $(\alpha, \{x \mapsto a, y \mapsto b\})$, $(\alpha, \{x \mapsto b, y \mapsto x_0\})$,$(\alpha, \{x \mapsto x_0, y \mapsto x_1\})$,\ldots in order to terminate, consequently, it will never stop. So the oblivious chase does not stop on $O$ whereas the restricted chase stops and $\textit{res(O)} = \{A(a,b),A(b,z_0),A(z_0,b)\}$ because at the initial step, there is only one restricted trigger: $(\alpha, \{x \mapsto a, y \mapsto b\})$, we apply it and there is not anymore any restricted trigger.
-\todo{Improve wording a bit: be more precise.}
-\end{example}
+There exists knowledge bases where the restricted chase does not terminate whereas the core chase terminates. \begin{example}
+Suppose that we have the knowledge base $O=(\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.(A(x,x) \wedge A(y,z))$ and $F =  \{A(a,b)\}$. A restricted chase derivation is $F_0,t_1,F_1,t_2,F_2,...$ where $F_0 = F$, $t_1=(\alpha,\{x \mapsto a, y \mapsto b\})$, $F_1= F_0 \cup \{A(a,a),A(b,z_{t_1})\}$, $t_2 = (\alpha,\{x \mapsto b, y \mapsto z_{t_1}\})$, $F_2 = F_1 \cup \{A(b,b),A(z_{t_1},z_{t_2})\}$, $t_3 = (\alpha,\{x \mapsto z_{t_1}, y \mapsto z_{t_2}\})$, $F_3 =  F_2 \cup \{A(z_{t_1},z_{t_1}),A(z_{t_2},z_{t_3})\}$\ldots\ It will never terminate because each new atom brings new restricted triggers. The core chase terminates on $O$: a core chase derivation is $F_0,F_1,F_2,F_3$ where $F_0=F$, $t_1=(\alpha,\{x \mapsto a, y \mapsto b\})$, $F_1=\Appl(F_0,t_1) =F_0 \cup \{A(a,a),A(b,z_{t_1})\}$, $t_2 = (\alpha,\{x \mapsto b, y \mapsto z_{t_1}\})$, $F_2 =\Appl(F_1,t_2) =F_1 \cup \{A(b,b),A(z_{t_1},z_{t_2})\}$, $F_3 = \textit{Core}(F_2)= \{A(a,a),A(a,b),A(b,b)\}$. 
+There is not anymore any restricted trigger for $F_3$ so the derivation is fair. Consequently the core chase terminates on $O$.
 
-So the restricted chase terminates more often than the oblivious chase. Nevertheless, there exists knowledge bases where the restricted chase does not terminate whereas there exists a finite universal model. \begin{example}
-If we have the knowledge base $O=(\{\alpha\},F)$ where $\alpha = A(x,y) \rightarrow \exists z.(A(x,x) \wedge A(y,z))$ and $F =  \{A(a,b)\}$, then the restricted chase will use the restricted triggers : $(\alpha, \{x \mapsto a, y \mapsto b\})$, $(\alpha, \{x \mapsto b, y \mapsto z_0\})$,$(\alpha, \{x \mapsto z_0, y \mapsto z_1\})$, etc\ldots and so  $\textit{res(O)} = \{A(a,a),A(a,b),A(b,b),A(b,z_0)\} \cup \{A(z_i,z_i),A(z_i,z_{i+1})\mid i \in \N\}$. So the restricted chase does not terminate whereas there exists a universal model $U = \{A(a,a),A(a,b),A(b,b)\}$. The core chase terminates on $O$: at the first step $F_1 = \{A(a,a),A(a,b),A(b,z_0)\}$. At the second step, if we do an active application, $F_2 = \{(a,a),A(a,b),A(b,b),A(b,z_0),A(z_0,z_1)\}$ (if at this step, we will have computed the core, $F_2 = F_1$ and we will have continued the chase). If at the third step, we compute the core of $F_1$, then $F_2 = U$. There is not anymore any restricted trigger so the core chase terminates. 
-\todo{Same as before: be a bit more precise here (discuss).}
 \end{example}
-The core chase always terminates when there exists a finite universal model but this core chase is very expensive in time and it is dificult to define the result of the algorithm when there is no finite universal models because the computing factbases are not monotonic in comparaison to the factbases computing by the oblivious and restricted chase.
-\todo{This intuition needs to be explained a bit better; discuss.}
+The core chase always terminates when there exists a finite universal model but this core chase is very expensive in time and it is dificult to define the result of the algorithm when there is no finite universal models because in a core chase derivation $D = F_0, F_1, F_2, \ldots$, we do not necessarily have $F_i \subseteq F_{i+1}$. 
 
 \section{The merge chase}
 
-\subsection{general case}
 
 \begin{definition}
-For a factbase $F$ and a term $t$, we note \emph{$C_F(t)$} the set of unary predicates $P$ such that $P(t)\in F$ and for two terms $t$ and $t'$, we note \emph{$R_{F}(t,t')$} the set of binary predicates $P$ such that $P(t,t')\in F'$..
+For a factbase $F$ and a term $t$, we note \emph{$\Preds^1_F(t)$} the set of unary predicates $P$ such that $P(t)\in F$. For two terms $t$ and $t'$, we note \emph{$\Preds^2_F(t,t')$} the set of binary predicates $P$ such that $P(t,t')\in F$.
 \end{definition}
 
-We restricted us to predicates of arity one or two. Hence, we will represent a database $F$ by a labelled graph $G = (V,E)$ where $V = \{t:A_1,\ldots,A_n /t \in \Terms$ and $A_1,\ldots,A_n$ are exactly the elements in $C_F(t)\}$ and $E = \{(t_1,t_2) /t_1,t_2 \in \Terms$ and $R_F(t_1,t_2) \neq \emptyset$. In this case, we label the edge with exactly the elements in $R_F(t_1,t_2)\}$. For example with $F = \{A(a), B(a),R(a,b),T(a,b),C(b),R(b,z)\}$: \\
+We restricted us to predicates of arity one or two. Hence, we will represent a database $F$ by a labelled graph $G = (V,E)$ where $V = \{t:A_1,\ldots,A_n /t \in \Terms$ and $A_1,\ldots,A_n$ are exactly the elements in $\Preds_F^1(t)\}$ and $E = \{(t_1,t_2) /t_1,t_2 \in \Terms$ and $\Preds^2_F(t_1,t_2) \neq \emptyset$. In this case, we label the edge with exactly the elements in $\Preds^2_F(t_1,t_2)\}$. For example with $F = \{A(a), B(a),R(a,b),T(a,b),C(b),R(b,z)\}$: \\
 
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm, semithick]
   \tikzstyle{every state}=[fill=white,draw=none,text=black]
@@ -359,18 +443,14 @@ We restricted us to predicates of arity one or two. Hence, we will represent a d
 \end{tikzpicture}
 
 
-\begin{definition}[type]
-For a factbase $F$ and a term $t$, we note 
-\end{definition}
-
-\subsection{Rules}
+\subsection{Horn-$\mathcal{ALC}$ }
 
 Horn-$\mathcal{ALC}$ has been introduced in \cite{Horn-ALC}
 
 \begin{definition}[Horn-$\mathcal{ALC}$ axioms]
 A \emph{Horn-$\mathcal{ALC}$ axiom} is an existential rule of the form:
 \begin{align}
-A_1(x) \wedge\ldots\wedge A_n(x) &\rightarrow B(x) \\
+A_1(x) \wedge A_2(x) &\rightarrow B(x) \\
 A(x) \wedge R(x,y) &\rightarrow B(y) \\
 A(x) &\rightarrow \exists y.R(x,y) \wedge B(y) \\
 R(x,y) \wedge B(y) &\rightarrow A(x)
@@ -379,17 +459,23 @@ R(x,y) \wedge B(y) &\rightarrow A(x)
 \end{definition}
 
 
-
-
-\subsection{Algorithm}
 We fix $O=(R,F)$ a knowledge base for this section where $R$ is a Horn-$\mathcal{ALC}$ rule set and F is a ground factbase with predicates of arity one or two.
 
+We can notice that all the variables are introduced by a Horn-$\mathcal{ALC}$ axiom of the form (3).
+
 \begin{definition}
-Let $F'$ be a factbase that occured in a core chase derivation of the knowledge base $O$. For two terms $t_1,t_2$ appearing in $F'$, we say that $t_1 \prec t_2$ if there exists a predicate $R$ such that $R(t_1,t_2) \in F'$. We write $\prec^+$ to denote the transitive closure of $\prec$.
+Let $F'$ be a factbase that occured in a chase derivation of the knowledge base $O$. For a term $t_1$ and a variable $x_2$ appearing in $F'$, we say that $t_1 \prec x_2$ if there exists a restricted trigger $tr = (A(x) \rightarrow \exists y.R(x,y) \wedge B(y), \{x \mapsto t_1\})$ such that $x_2 = y_t$. We write $\prec^+$ to denote the transitive closure of $\prec$.
 \end{definition}
 
-\begin{proposition}
-In the Horn-$\mathcal{ALC}$ theory, let $D = F_0,F_1,\ldots$ be a core chase derivation of the knowledge base $O$. We write $\prec^+_i$ to denote the relation $\prec^+$ over the factbase $F_i$. $\prec^+_i$ is a strict partial order over the set of variables of $F_i$.
+Concretely, $t_1 \prec x_2$ if $x_2$ has been introduced by $t_1$ due to a rule of the form (3). Therefore:
+
+\begin{proposition} \label{only one predecessor}
+Let $F'$ be a factbase that occured in a chase derivation of the knowledge base $O$. For every variable $x$, there exists exactly one predecessor for $\prec$.
+\end{proposition}
+
+
+\begin{proposition} \label{partial_order}
+In the Horn-$\mathcal{ALC}$ theory, let $D = F_0,F_1,\ldots$ be a chase derivation of the knowledge base $O$. We write $\prec_i$ to denote the relation $\prec$ over the factbase $F_i$. $\prec^+_i$ is a strict partial order over the set of variables of $F_i$.
 \end{proposition}
 
 \begin{proof}
@@ -404,8 +490,8 @@ We show it by induction on $i$.
 \item If $F_{i+1}$ is the core of $F_i$, we just take off some facts so $\prec^+_{i+1} \subseteq \prec^+_{i}$  so $\prec^+_{i+1}$ is irreflexive.
 \item Otherwise, $F_{i+1}= \Appl(F_{i},t_i)$ with $t_i = (\alpha,\sigma)$ a restricted trigger. 
 \begin{itemize}
-\item If $\alpha$ is not of the form of the rule $3$, then $\prec^+_{i+1} = \prec^+_{i}$  so $\prec^+_{i+1}$ is irreflexive.
-\item Otherwise, $\alpha = A(x) \rightarrow \exists y.R(x,y) \wedge B(y)$ so $F_{i+1} = F_i \cup \{R(x,y_{t_i}),B(y_{t_i})\}$ so $\prec^+_{i+1} = \prec^+_{i} \cup \{(z,y_{t_i}) \mid z = x$ or $z \prec_i^+ x\}$. It is clear that $\prec^+_{i+1}$ is irreflexive.
+\item If $\alpha$ is not of the form of the rule $3$, then $\prec^+_{i+1} = \prec^+_{i}$  so $\prec^+_{i+1}$ is also irreflexive by induction hypothesis.
+\item Otherwise, $\alpha = A(x) \rightarrow \exists y.R(x,y) \wedge B(y)$ so $F_{i+1} = F_i \cup \{R(\sigma(x),y_{t_i}),B(y_{t_i})\}$ and $\prec_{i+1} =\prec_i \cup (\sigma(x),y_{t_i})$. So $\prec^+_{i+1} = \prec^+_{i} \cup \{(z,y_{t_i}) \mid z = \sigma(x)$ or $z \prec_i^+ \sigma(x)\}$. We can see that $y_{t_i}$ has no successor for the relation $\prec_{i+1}$ so, as $\prec^+_i$ is irreflexive by induction hypothesis, $\prec^+_{i+1}$ is irreflexive.
 \end{itemize}
 \end{itemize}
 
@@ -414,7 +500,18 @@ We show it by induction on $i$.
 \end{itemize}
 \end{proof}
 
-We have shown in the proof that the graphs ($\Vars(F_i)$,$\prec_i$ ) does not contain any cycle. Therefore this graph is a forest of trees. 
+We have shown in the proof that the oriented graphs ($\Vars(F_i)$,$\prec_i$) does not contain any cycle. Therefore, with the last proposition and proposition \ref{only one predecessor}: 
+
+\begin{proposition}
+Let $F'$ be a factbase that occured in a chase derivation of the knowledge base $O$. ($\Vars(F')$,$\prec$) is a forest of trees where $x_1$ is the father of $x_2$ if $x_1 \prec x_2$.
+\end{proposition}
+
+We can now define the notion of tree of a term $t$ that is all the facts containing either $t$ or the $\prec$-sucessor of $t$:
+
+\begin{definition}[Tree]
+Let $F'$ be a factbase that occured in a chase derivation of the knowledge base $O$. For a term $t$, we note \emph{$\Tree_{F'}(t)$} = $\{A(t') \mid A(t') \in F' \wedge t' \in \Terms \wedge (t = t' \vee t \prec t')\} \cup \{R(t',x) \mid R(t',x) \in F' \wedge x \in \Vars \wedge t' \in \Terms \wedge (t = t' \vee t \prec t')\}$
+\end{definition}
+
 
 %We can then associate the depth of a variable:
 %
@@ -425,45 +522,248 @@ We have shown in the proof that the graphs ($\Vars(F_i)$,$\prec_i$ ) does not co
 %\end{itemize}
 %\end{definition}
 
+We now define the notion of siblings in order to consider an algorithm.
 
 \begin{definition}[Siblings]
-Let $F'$ be a factbase that occured in a core chase derivation of the knowledge base $O$. Two terms $t_1$ and $t_2$ such that $t_1 \neq t_2$ are \emph{siblings} if $C_{F'}(t_1) \subseteq C_{F'}(t_2)$ or $C_{F'}(t_2) \subseteq C_{F'}(t_1)$, and if there exists a term $t$ and a predicate $R$ such that $R(t,t_1) \in F'$ and $R(t,t_2) \in F'$. In this case, $t_1$ is a \emph{powerful sibling} of $t_2$ if $C_{F'}(t_2) \subseteq C_{F'}(t_1)$. Otherwise, it is a \emph{powerless sibling}.
+Let $F'$ be a factbase that occured in a chase derivation of the knowledge base $O$. For two terms $t_1$ and $t_2$ such that $t_1 \neq t_2$, $t_1$ is a \emph{strong sibling} of $t_2$ if:
+\begin{itemize}
+\item $t_2$ is a variable,
+\item $\Preds_{F'}^1(t_2) \subseteq \Preds_{F'}^1(t_1)$,
+\item there exists a term $t$ such that
+	\begin{itemize}
+	\item $\Preds^2_{F'}(t,t_2) \neq \emptyset$, and
+	\item $\Preds_{F'}^2(t,t_2) \subseteq \Preds_{F'}^2(t,t_1)$.
+	\end{itemize}
+\end{itemize}
+In this case, we say that  $t_2$ is a \emph{weak sibling} of $t_1$. Two terms $t_1$ and $t_2$ such that $t_1 \neq t_2$ are \emph{siblings} if $t_1$ is a strong or a weak sibling of $t_2$.
+
 \end{definition}
 
+We imposed that a term can only be a strong sibling of a variable because, we will latter map a weak sibling to a strong sibling and it is not possible to map a constant to another term.
+
+Notice that the definition of siblings can be shorted because, in the Horn-$\mathcal{ALC}$ theory, for a term $t$, there exists a unique term $t'$ and a unique binary relation $R$ such that $R(t',t)\in F'$. So we can replace the last condition in the definition about the existence of $t$ by: there exists a term $t$ and a predicate $R$ such that $R(t,t_1) \in F'$ and $R(t,t_2) \in F'$. We write this more complex definition because it works in more general cases.
+
+When $t$ is a strong sibling of $x$ in $F'$, we want to say that all the triggers applied on $x$ and on the $\prec$-successor of $x$ can be or have already been applied on $t$ and on the $\prec$-successor of $t$. Therefore, all the facts containing $x$ and the $\prec$-successor of $x$ are or will be redundant. But we do not want to supress all these facts because we know that if they are not yet in the tree of $t$, they would be computed. That is this intuition that leads us to define merging:
+
+\begin{definition}[atomic merging]
+For a factbase $F'$, a term $t \in \Terms(F')$, a variable $x\in \Vars(F')$, and a substitution $h$ where $h(x) =t$ and for all $y \neq x, h(y)=y$, if $t$ is a strong sibling of $x$ in $F'$, then we say that $h(F')$ is the \emph{atomic merging} of $x$ over $t$ in $F'$.
+\end{definition}
+
+The following algorithm is the operation that will replace the computation of the core in the core chase. We will show that for a core chase derivation $D =F_0,...,F_k$ of $O$, if we apply our algorithm on $F_k$, then it computes the core of a factbase that could have been produced by continuing the derivation $D$. In this sense, it always computes the core or something better than the core.
+
 \begin{definition}[Merging]
-Merging a factbase $F'$ that occured in a core chase derivation of the knowledge base $O$.
+Let $F'$ be a factbase that occured in a chase derivation of the knowledge base $O$.
 
 \begin{algorithm}[H]
 \SetAlgoLined
 
 
-    Let $\textbf{\Terms}(F') = \{t_1,\ldots, t_n\}$ be such that  $(t_i \in \textbf{cst} \wedge t_j \in \textbf{var}) \Rightarrow i < j$ and $(t_i \prec^+ t_j \wedge t_i,t_j \in \textbf{var}) \Rightarrow i < j$ \;
+    Let $\textbf{\Vars}(F') = \{x_1,\ldots, x_n\}$ be such that $(x_i \prec^+ x_j) \Rightarrow i < j$ \;
     \For{$i \in \{1,\ldots,n\}$}{
-    	\If{$t_i$ is a variable}{
-        	\For{all powerfull siblings $t$ of $t_i$}{
-			$F' \leftarrow h(F')$ where $h$ is a substitution such that $h(t_i) = t$ and for all $x \neq t_i$, $h(x) = x$.
+    	\If{$x_i$ is still a variable in $F'$}{
+        	\For{all strong siblings $t$ of $x_i$}{
+				$F' \leftarrow$ the atomic merging of $x_i$ over $t$ in $F'$.
+			}
+			\For{all weak siblings $x$ of $x_i$ such that $x$ is a variable}{
+				$F' \leftarrow$ the atomic merging of $x$ over $x_i$ in $F'$.
 			}
 		}
-		\For{all powerless siblings $x$ of $t_i$ such that $x$ is a variable}{
-			$F' \leftarrow h(F')$ where $h$ is a substitution such that $h(x) = t_i$ and for all $y \neq x$, $h(y) = y$.
-		}
 	}
+return $F'$
 \caption{Merge($F'$):}
 
 
 \end{algorithm}
-At line 1, we can sort terms like that because, by proposition 2.1, $\prec^+$ is a strict partial order over the set of variables of $F'$.
+At line 1, we can sort terms like that because, by proposition \ref{partial_order}, $\prec^+$ is a strict partial order over the set of variables of $F'$.
 \end{definition}
 
-\begin{proposition}
-After a merging, there do not exists a term $t$ and a variable $x$ such that $t$ is a powerfull sibling of $x$.
+We will now consider a new chase:
+
+\begin{definition}
+The \emph{merge chase} is the core chase using the merging instead of computing the core, and can be applied only in the Horn-$\mathcal{ALC}$ theory. 
+\end{definition}
+
+
+
+\begin{example} 
+The figure below is an example of merging. We merge the factbase of the left, $x \prec y$ so we first look the siblings of $x$ and then siblings of $y$. The variable $x$ have a strong siblings $b$ so we do an atomic merging of $x$ over $b$ that gives us the factbase of the middle. Now, $y$ has a strong sibling $c$ so we do an atomic merging of $y$ over $c$ that gives us the factbase of the right.
+
+\begin{center}
+\begin{tikzpicture}[scale=0.2]
+\tikzstyle{every node}+=[inner sep=0pt]
+\draw [white] (8.2,-36.8) circle (3);
+\draw (8.2,-36.8) node {$a:A$};
+\draw [white] (4,-24.6) circle (3);
+\draw (4,-24.6) node {$b:\mbox{ }C,D$};
+\draw [white] (12.2,-24.6) circle (3);
+\draw (12.2,-24.6) node {$x:\mbox{ }C$};
+\draw [white] (12.2,-11.2) circle (3);
+\draw (12.2,-11.2) node {$y:\mbox{ }E$};
+\draw [white] (4,-11.2) circle (3);
+\draw (4,-11.2) node {$c:\mbox{ }E$};
+\draw [white] (15.5,-24.5) circle (3);
+\draw [white] (31.1,-24.5) circle (3);
+\draw [white] (33.4,-37.6) circle (3);
+\draw (33.4,-37.6) node {$a:\mbox{ }A$};
+\draw [white] (33.4,-23.8) circle (3);
+\draw (33.4,-23.8) node {$b:\mbox{ }C,D$};
+\draw [white] (29.3,-11.2) circle (3);
+\draw (29.3,-11.2) node {$c:\mbox{ }E$};
+\draw [white] (38.1,-11.2) circle (3);
+\draw (38.1,-11.2) node {$y:\mbox{ }E$};
+\draw [white] (35.8,-24.5) circle (3);
+\draw [white] (50.5,-24.5) circle (3);
+\draw [white] (54.6,-37.6) circle (3);
+\draw (54.6,-37.6) node {$a:\mbox{ }A$};
+\draw [white] (54.6,-24.5) circle (3);
+\draw (54.6,-24.5) node {$b:\mbox{ }C,D$};
+\draw [white] (54.6,-11.2) circle (3);
+\draw (54.6,-11.2) node {$c:E$};
+\draw [black] (7.22,-33.96) -- (4.98,-27.44);
+\fill [black] (4.98,-27.44) -- (4.76,-28.36) -- (5.71,-28.03);
+\draw (6.86,-29.97) node [right] {$S$};
+\draw [black] (4,-21.6) -- (4,-14.2);
+\fill [black] (4,-14.2) -- (3.5,-15) -- (4.5,-15);
+\draw (4.5,-17.9) node [right] {$R$};
+\draw [black] (9.13,-33.95) -- (11.27,-27.45);
+\fill [black] (11.27,-27.45) -- (10.54,-28.06) -- (11.49,-28.37);
+\draw (10.97,-31.39) node [right] {$S$};
+\draw [black] (12.2,-21.6) -- (12.2,-14.2);
+\fill [black] (12.2,-14.2) -- (11.7,-15) -- (12.7,-15);
+\draw (12.7,-17.9) node [right] {$R$};
+\draw [red] (18.5,-24.5) -- (28.1,-24.5);
+\fill [red] (28.1,-24.5) -- (27.3,-24) -- (27.3,-25);
+\draw [black] (33.4,-34.6) -- (33.4,-26.8);
+\fill [black] (33.4,-26.8) -- (32.9,-27.6) -- (33.9,-27.6);
+\draw (33.9,-30.7) node [right] {$S$};
+\draw [black] (32.47,-20.95) -- (30.23,-14.05);
+\fill [black] (30.23,-14.05) -- (30,-14.97) -- (30.95,-14.66);
+\draw (32.12,-16.82) node [right] {$R$};
+\draw [black] (34.45,-20.99) -- (37.05,-14.01);
+\fill [black] (37.05,-14.01) -- (36.3,-14.59) -- (37.24,-14.94);
+\draw (36.51,-18.31) node [right] {$R$};
+\draw [red] (38.8,-24.5) -- (47.5,-24.5);
+\fill [red] (47.5,-24.5) -- (46.7,-24) -- (46.7,-25);
+\draw [black] (54.6,-34.6) -- (54.6,-27.5);
+\fill [black] (54.6,-27.5) -- (54.1,-28.3) -- (55.1,-28.3);
+\draw (55.1,-31.05) node [right] {$S$};
+\draw [black] (54.6,-21.5) -- (54.6,-14.2);
+\fill [black] (54.6,-14.2) -- (54.1,-15) -- (55.1,-15);
+\draw (55.1,-17.85) node [right] {$R$};
+\end{tikzpicture}
+\end{center}
+
+We can notice that the order of variables we choose is really important because an atomic merging can create others siblings. In this example, if we treat $y$ before $x$, then at the the moment where we treat $y$, it does not have any siblings yet so at the end, we get the factbase of the middle and we will not have merged every possible siblings.
+\end{example}
+
+It is really important that the merging does all the possible atomic merging that it can do. Otherwise, the merge chase may not terminates on some knowledge base whereas there exists a finite universal model (like we will see in the next example) and we want that the merge chase terminates on all knowledge base that admits a finite universal model. 
+
+\begin{example}
+We consider in the example that $F= \{R(a,b),R(b,a),A(a),A(b)\}$ and $R = \{\alpha, \beta\}$ where $\alpha = A(x) \rightarrow \exists y.R(x,y) \wedge A(y)$ and $\beta=B(x) \rightarrow A(x)$. We consider the merge chase derivation $F_0 =F,F_1,F_2,...$ where instead of using the merge operation, we use the atomic merge operation. We applied to $F_0$ the restricted trigger $t_1 = (\alpha, \{x \mapsto a\})$, we then applied to $F_1$, the restricted trigger $t_2 = (\alpha, \{x \mapsto y_{t_1}\})$ giving rise to the first factbase of the figure below. We then apply the restricted trigger $t_3 = (\beta, \{x \mapsto b\})$ to obtain the factbase $F_3$. At this moment, $b$ is a strong sibling of $y_{t_1}$ so we do an atomic merging of $y_{t_1}$ over $b$ to get $F_4$ that is the second factbase of the figure. $F_5$ is obtained by the application of the restricted trigger $t_4 = (\alpha, \{x \mapsto y_{t_2}\})$ and is the third factbase of the figure. At this moment, $a$ is a strong sibling of $y_{t_2}$ so we do an atomic merging of $y_{t_2}$ over $a$ to get $F_6$ that is the last factbase of the figure. We can repeat this infinitely. But $O$ admits a finite universal model: $U = F \cup \{B(b)\}$. So the version of the chase where we consider partial merging is not what we want.
+
+
+\begin{center}
+\begin{tikzpicture}[scale=0.2]
+\tikzstyle{every node}+=[inner sep=0pt]
+\draw [white] (8.5,-24.6) circle (3);
+\draw (8.5,-24.6) node {$a:\mbox{ }A$};
+\draw [white] (8.5,-33.9) circle (3);
+\draw (8.5,-33.9) node {$b:\mbox{ }B$};
+\draw [white] (8.5,-14.8) circle (3);
+\draw (8.5,-14.8) node {$y_{t_1}:\mbox{ }A$};
+\draw [white] (8.5,-5.4) circle (3);
+\draw (8.5,-5.4) node {$y_{t_2}:\mbox{ }A$};
+\draw [white] (24.7,-33.9) circle (3);
+\draw (24.7,-33.9) node {$b:\mbox{ }A,B$};
+\draw [white] (24.7,-24) circle (3);
+\draw (24.7,-24) node {$a:A$};
+\draw [white] (24.7,-44.2) circle (3);
+\draw (24.7,-44.2) node {$y_{t_2}:\mbox{ }A$};
+\draw [white] (40,-44.2) circle (3);
+\draw (40,-44.2) node {$y_{t_2}:\mbox{ }A$};
+\draw [white] (40,-33.9) circle (3);
+\draw (40,-33.9) node {$b:\mbox{ }A,B$};
+\draw [white] (40,-24) circle (3);
+\draw (40,-24) node {$a:\mbox{ }A$};
+\draw [white] (40,-54.1) circle (3);
+\draw (40,-54.1) node {$y_{t_4}:\mbox{ }A$};
+\draw [white] (55.7,-24.6) circle (3);
+\draw (55.7,-24.6) node {$a:\mbox{ }A$};
+\draw [white] (55.7,-34.5) circle (3);
+\draw (55.7,-34.5) node {$b:\mbox{ }A,B$};
+\draw [white] (55.7,-14.8) circle (3);
+\draw (55.7,-14.8) node {$y_{t_4}:\mbox{ }A$};
+\draw [white] (11.9,-28.9) circle (3);
+\draw [white] (20.5,-28.9) circle (3);
+\draw [white] (28.6,-28.8) circle (3);
+\draw [white] (36.9,-28.8) circle (3);
+\draw [white] (44,-28.8) circle (3);
+\draw [white] (52.7,-28.8) circle (3);
+\draw [white] (58.6,-29.9) circle (3);
+\draw [white] (67.2,-29.9) circle (3);
+\draw (67.2,-29.9) node {$\ldots$};
+\draw [black] (11.162,-25.868) arc (46.19008:-46.19008:4.686);
+\fill [black] (11.16,-25.87) -- (11.39,-26.78) -- (12.09,-26.06);
+\draw (13.1,-29.25) node [right] {$R$};
+\draw [black] (5.784,-32.753) arc (-131.32879:-228.67121:4.664);
+\fill [black] (5.78,-32.75) -- (5.51,-31.85) -- (4.85,-32.6);
+\draw (3.7,-29.25) node [left] {$R$};
+\draw [black] (8.5,-21.6) -- (8.5,-17.8);
+\fill [black] (8.5,-17.8) -- (8,-18.6) -- (9,-18.6);
+\draw (9,-19.7) node [right] {$R$};
+\draw [black] (8.5,-11.8) -- (8.5,-8.4);
+\fill [black] (8.5,-8.4) -- (8,-9.2) -- (9,-9.2);
+\draw (9,-10.1) node [right] {$R$};
+\draw [black] (27.299,-25.408) arc (44.53872:-44.53872:5.05);
+\fill [black] (27.3,-25.41) -- (27.5,-26.33) -- (28.22,-25.63);
+\draw (29.25,-28.95) node [right] {$R$};
+\draw [black] (22.29,-32.183) arc (-141.88061:-218.11939:5.237);
+\fill [black] (22.29,-32.18) -- (22.19,-31.24) -- (21.4,-31.86);
+\draw (20.67,-28.95) node [left] {$R$};
+\draw [black] (24.7,-36.9) -- (24.7,-41.2);
+\fill [black] (24.7,-41.2) -- (25.2,-40.4) -- (24.2,-40.4);
+\draw (24.2,-39.05) node [left] {$R$};
+\draw [black] (42.676,-25.254) arc (47.68401:-47.68401:4.998);
+\fill [black] (42.68,-25.25) -- (42.93,-26.16) -- (43.6,-25.42);
+\draw (44.81,-28.95) node [right] {$R$};
+\draw [black] (40,-47.2) -- (40,-51.1);
+\fill [black] (40,-51.1) -- (40.5,-50.3) -- (39.5,-50.3);
+\draw (39.5,-49.15) node [left] {$R$};
+\draw [black] (40,-36.9) -- (40,-41.2);
+\fill [black] (40,-41.2) -- (40.5,-40.4) -- (39.5,-40.4);
+\draw (39.5,-39.05) node [left] {$R$};
+\draw [black] (37.553,-32.236) arc (-140.75683:-219.24317:5.195);
+\fill [black] (37.55,-32.24) -- (37.43,-31.3) -- (36.66,-31.93);
+\draw (35.88,-28.95) node [left] {$R$};
+\draw [black] (53.409,-32.624) arc (-145.24527:-214.75473:5.392);
+\fill [black] (53.41,-32.62) -- (53.36,-31.68) -- (52.54,-32.25);
+\draw (51.95,-29.55) node [left] {$R$};
+\draw [black] (58.055,-26.393) arc (36.51301:-36.51301:5.305);
+\fill [black] (58.06,-26.39) -- (58.13,-27.33) -- (58.93,-26.74);
+\draw (59.6,-29.55) node [right] {$R$};
+\draw [black] (55.7,-21.6) -- (55.7,-17.8);
+\fill [black] (55.7,-17.8) -- (55.2,-18.6) -- (56.2,-18.6);
+\draw (56.2,-19.7) node [right] {$R$};
+\draw [red] (14.9,-28.9) -- (17.5,-28.9);
+\fill [red] (17.5,-28.9) -- (16.7,-28.4) -- (16.7,-29.4);
+\draw [red] (31.6,-28.8) -- (33.9,-28.8);
+\fill [red] (33.9,-28.8) -- (33.1,-28.3) -- (33.1,-29.3);
+\draw [red] (47,-28.8) -- (49.7,-28.8);
+\fill [red] (49.7,-28.8) -- (48.9,-28.3) -- (48.9,-29.3);
+\draw [red] (61.6,-29.9) -- (64.2,-29.9);
+\fill [red] (64.2,-29.9) -- (63.4,-29.4) -- (63.4,-30.4);
+\end{tikzpicture}
+\end{center}
+\end{example}
+
+The last example show the importance of doing a total merging. We have to prove that our merging algorithm does a total merging:
+
+\begin{proposition}\label{no_more_siblings}
+For a factbase $G$ obtained by applying some Horn-$\mathcal{ALC}$ axioms on $O$, after the merging of $G$, there does not exists a term $t$ and a variable $x$ such that $t$ is a strong sibling of $x$.
 \end{proposition}
 
-There can still have siblings between two constants.
-
 \begin{proof}
-Let $G$ be a factbase that occured in a core chase derivation of the knowledge base $O$. 
-Suppose by contradiction that there exists a term $t$ and a variable $x$ such that $t$ is a powerfull sibling of $x$ in $\Merge(G)$: there exists a term $t'$ and a binary predicate $R$ such that $R(t',x),R(t',t) \in \Merge(G)$. There is still a such sibling in $\Merge(G)$ only if there exists a factbase $G^1$ computing during the merging such that $x$ has already been studied by the algorithm, and there exists a variable $y \in \Vars(G^1)$ that will be merged on $t'$ and such that $R(y,x) \in G^1$. There exists then a term $t_0$ and a binary predicate $S$ such that $S(t_0,t'),S(t_0,y) \in G^1$. We note $G^2$ the factbase obtained after the merging of $t'$ and $y$. $G^1$ is the left figure and $G^2$ is the right figure (we do not represent all the graphs):
+Suppose by contradiction that there exists a term $t$ and a variable $x$ such that $t$ is a strong sibling of $x$ in $\Merge(G)$: there exists a term $t'$ and a binary predicate $R$ such that $R(t',x),R(t',t) \in \Merge(G)$. This case can happen only if $x$ and $t$ became siblings after that $x$ has been traited by the merging algorithm (and  after that $t$ has been traited if $t$ is a variable). Thus, during the merging, there has been an atomic merging over $t'$. Let $y$ be the variable merged on $t'$ such that $y \prec t$ or $y \prec x$, we suppose without loss of generality that $y \prec x$. We note $G^1$ the factbase just before the atomic merging of $y$ over $t'$ and we note $G^2$ the factbase just after the atomic merging. There exists a term $t_0$ and a binary predicate $S$ such that $S(t_0,t'),S(t_0,y) \in G^1$. $G^1$ is the left figure and $G^2$ is the right figure (we do not represent all the graphs):
 
 \begin{center}
 \begin{tikzpicture}[scale=0.2]
@@ -520,95 +820,32 @@ Suppose by contradiction that there exists a term $t$ and a variable $x$ such th
 \end{tikzpicture}
 \end{center}
 
-We have $t_0 \prec t' \prec t$ and $t_0 \prec y \prec x$ so $x$ is treated by the algorithm after the merging of $t'$ and $y$ so the algorithm will merge $t$ and $x$: contradiction. 
-
-
+We have $t_0 \prec t' \prec t$ and $t_0 \prec y \prec x$ so $x$ should have been treated by the algorithm after the merging of $t'$ and $y$ so the algorithm will merge $t$ and $x$: contradiction. 
 \end{proof}
 
-
-The merging is actually computing something better than the core of the factbase $F'$: it is computing the core of a factbase that could have been obtained by applying some restricted triggers to $F'$. 
-
-We will now consider a new chase:
-
-\begin{definition}
-The \emph{merge chase} is the core chase using the merging instead of computing the core, and can be applied only in the Horn-$\mathcal{ALC}$ theory. 
-\end{definition}
-
-\begin{example} 
-In the figure below, the merging of the factbase of the left gives the factbase of the right due to the homorphism $h = \{x_1 \mapsto x_1, x_2 \mapsto x_1, x_3 \mapsto x_3\}$.
-
-
-\begin{center}
-\begin{tikzpicture}[scale=0.2]
-\tikzstyle{every node}+=[inner sep=0pt]
-\draw [white] (14.2,-48.1) circle (3);
-\draw (14.2,-48.1) node {$a$};
-\draw [white] (6.5,-39.2) circle (3);
-\draw (6.5,-39.2) node {$x_1:\mbox{ }A,B$};
-\draw [white] (23.4,-39.2) circle (3);
-\draw (23.4,-39.2) node {$x_2:\mbox{ }A$};
-\draw [white] (23.4,-26.8) circle (3);
-\draw (23.4,-26.8) node {$x_3:\mbox{ }D$};
-\draw [white] (61.7,-50.7) circle (3);
-\draw (61.7,-50.7) node {$a$};
-\draw [white] (51.9,-39.2) circle (3);
-\draw (51.9,-39.2) node {$x_1:\mbox{ }A,B$};
-\draw [white] (59.2,-26.8) circle (3);
-\draw (59.2,-26.8) node {$x_3\mbox{ }:\mbox{ }D$};
-\draw [white] (6.5,-26.8) circle (3);
-\draw (6.5,-26.8) node {$x_4:\mbox{ }E$};
-\draw [white] (45.6,-26.8) circle (3);
-\draw (45.6,-26.8) node {$x_4:\mbox{ }E$};
-\draw [white] (30.1,-39.2) circle (3);
-\draw [white] (45.6,-39.2) circle (3);
-\draw [black] (12.24,-45.83) -- (8.46,-41.47);
-\fill [black] (8.46,-41.47) -- (8.61,-42.4) -- (9.36,-41.75);
-\draw (10.9,-42.2) node [right] {$R_1$};
-\draw [black] (16.36,-46.01) -- (21.24,-41.29);
-\fill [black] (21.24,-41.29) -- (20.32,-41.48) -- (21.02,-42.2);
-\draw (20.29,-44.13) node [below] {$R_1$};
-\draw [black] (23.4,-36.2) -- (23.4,-29.8);
-\fill [black] (23.4,-29.8) -- (22.9,-30.6) -- (23.9,-30.6);
-\draw (23.9,-33) node [right] {$R_2$};
-\draw [black] (59.75,-48.42) -- (53.85,-41.48);
-\fill [black] (53.85,-41.48) -- (53.98,-42.42) -- (54.75,-41.77);
-\draw (57.35,-43.51) node [right] {$R_1$};
-\draw [black] (53.42,-36.61) -- (57.68,-29.39);
-\fill [black] (57.68,-29.39) -- (56.84,-29.82) -- (57.7,-30.33);
-\draw (56.2,-34.25) node [right] {$R_2$};
-\draw [black] (6.5,-36.2) -- (6.5,-29.8);
-\fill [black] (6.5,-29.8) -- (6,-30.6) -- (7,-30.6);
-\draw [black] (50.54,-36.53) -- (46.96,-29.47);
-\fill [black] (46.96,-29.47) -- (46.88,-30.41) -- (47.77,-29.96);
-\draw [black] (33.1,-39.2) -- (42.6,-39.2);
-\fill [black] (42.6,-39.2) -- (41.8,-38.7) -- (41.8,-39.7);
-\draw [black] (33.1,-39.2) -- (42.6,-39.2);
-\fill [black] (42.6,-39.2) -- (41.8,-38.7) -- (41.8,-39.7);
-\end{tikzpicture}
-\end{center}
-
-\end{example}
+We want now prove that a merging compute a core:
 
 \begin{proposition} 
-Let $G$ be a factbase that occured in a core chase derivation of the knowledge base $O$. $\Merge(G)$ is a core.
+For a factbase $G$ obtained by applying some Horn-$\mathcal{ALC}$ axioms on $O$, $\Merge(G)$ is a core.
 \end{proposition}
 
 \begin{proof}
 %\item The $\mathcal{ALC}$-pruning algorithm only take off facts of the factbase. Consequently, $\textit{prune}(G) \subseteq G$.
 %\item We consider the homorphism $h:G \to \textit{prune}(G)$ created during the $\mathcal{ALC}$-pruning algorithm. For $x \in \Vars(G)$, suppose that $h(x) \neq x$. According to the $\mathcal{ALC}$-pruning algorithm, $x$ has been erased \todo{à préciser}. So $x \notin \Vars(\textit{prune}(G))$. So ${h}_{|\textit{Prune}(G)}=id_{|\textit{Prune}(G)}$. We have shown that $h$ is a retract so $\textit{prune}(G)$ is a retract of $G$.
-Suppose by contradiction that $\Merge(G)$ is not a core. There exists $G' \subsetneq \Merge(G)$ such that $G'$ is a retract of $\Merge(G)$. By proposition 1.1, there exists then a retractation $h$ from $\Merge(G)$ to $G'$, $var(\Merge(G))\setminus var(G') \neq \emptyset$. Let $x$ be a $\prec^+$-minimal variable of this set. $x$ is a variable, so has been introduced by the core chase due to the axiom 3. So there exists a term $t$ and a relation $R$ such that $R(t,x) \in \Merge(G)$. By minimality of $x$, $t \in \Vars(G')$. So, as $h$ is a retractation: $h(t) = t$, so $h(R(t,x)) = R(t,h(x))$. $x \notin G'$ and $h(x) \in G'$ so $h(x) \neq x$. Let $A \in C_{\Merge(G)}(x)$. $h(A(x)) \in \Merge(G)$ so $A(h(x)) \in \Merge(G)$ so $C_{\Merge(G)}(x) \subseteq C_{\Merge(G)}(h(x))$. Consequently, $h(x)$ is a sibling of $x$ in $\Merge(G)$. So, by proposition 2.2, the merging should have suppress $x$ or $h(x)$, so $x \notin \Merge(G)$ or $h(x) \notin \Merge(G)$: contradiction. So $\Merge(G)$ is a core.
+Suppose by contradiction that $\Merge(G)$ is not a core. There exists $G' \subsetneq \Merge(G)$ such that $G'$ is a retract of $\Merge(G)$. By proposition 1.1, there exists then a retractation $h$ from $\Merge(G)$ to $G'$, $var(\Merge(G))\setminus var(G') \neq \emptyset$. Let $x$ be a $\prec$-minimal variable of this set. $x$ is a variable, so has been introduced by the chase due to the axiom 3. So there exists a term $t$ such that $t \prec x$. We have $\Preds^2_{\Merge(G)}(t,x) \neq \emptyset$. By $\prec$-minimality of $x$, $t \in \Vars(G')$. So, as $h$ is a retractation: $h(t) = t$, so for $R \in \Preds^2_{\Merge(G)}(t,x)$, $h(R(t,x)) = R(t,h(x)) \in \Merge(G)$ and so $R \in \Preds^2_{\Merge(G)}(t,h(x))$. Thus $\Preds^2_{\Merge(G)}(t,x) \subseteq \Preds^2_{\Merge(G)}(t,h(x))$ and $t \prec h(x)$. $x \notin G'$ and $h(x) \in G'$ so $h(x) \neq x$. Let $A \in \Preds^1_{\Merge(G)}(x)$. $h(A(x)) \in \Merge(G)$ so $A(h(x)) \in \Merge(G)$ so $\Preds^1_{\Merge(G)}(x) \subseteq \Preds^1_{\Merge(G)}(h(x))$. Consequently, $h(x)$ and $x$ are siblings in $\Merge(G)$. So, by proposition \ref{no_more_siblings}, the merging should have suppress $x$ or $h(x)$, so $x \notin \Merge(G)$ or $h(x) \notin \Merge(G)$: contradiction. So $\Merge(G)$ is a core.
 \end{proof}	
 
 $\Merge(G)$ is a core but not necessarily the core of $G$.
 
 \begin{proposition}
-Let $G$ be a factbase that occured in a core chase derivation of the knowledge base $O$. There exists a core chase derivation $D = F_0,F_1,\ldots,F_n$ of $O$ such that $F_n = \Merge(G)$.
+Let $D = F_0,t_1,F_1,\ldots, t_n,F_n$ be an oblivious chase derivation of the knowledge base $O$. Let $t$ be a strong sibling of $x$ in $F_n$ and $G$ be the atomic merging of $x$ over $t$. There exists an oblivious chase derivation $D' = F_0,t_1,F_1,\ldots,t_k,F_k$ of $O$ prolonging $D$ such that $F_k = F_n \cup h(\Tree_{F_n}(x))$ where $h$ is a substitution such that $h(x) =t$ and for all $y \neq x, h(y)=$ the variable $y$ where we change $x$ to $t$ \todo{mieux définir...}.
 \end{proposition}
 
-\begin{proof}[Sketch of the proof]
-We prove it only in the case where the merging algorithm merges only one couple of sibling. It will then be direct to prove by induction the general case where they are several merging of siblings during the algorithm.
-So there exists a unique term $t$ and a unique variable $x$ such that $t$ is a powerfull sibling of $x$ in $G$. By definition of $G$, there exists a core chase derivation $F_0$,\ldots,$F_k$ of $O$ such that $G = F_k$. The intuitive idea is to extend this derivation by computing on $t$ all the retricted triggers that have been applied to $x$ and the succesors of $x$ (by $\prec^+$) and then to terminate the derivation, we compute the core. It will work because all the pieces of information that $x$ has, $t$ has them too, and because the computation of the core will then supress all the branch starting at $x$ but will not supress any variable of the branch of $t$ (otherwise there would be more siblings).
-\end{proof} \todo{maybe I can do an induction on the number of trigger applied to $x$.}
+\begin{proof}
+Let $tr_1 = (\alpha_1,\sigma_1),\ldots, tr_n =(\alpha_n,\sigma_n)$ be all the triggers applied to $x$ and to the  $\prec$-sucessor of $x$ ordered by application time. We show by induction on $i \in \{0,\ldots, n\},H(i):$ 
+
+%The intuitive idea is to extend this derivation by computing on $t$ all the retricted triggers that have been applied to $x$ and the succesors of $x$ (by $\prec^+$) and then to terminate the derivation, we compute the core. It will work because all the pieces of information that $x$ has, $t$ has them too, and because the computation of the core will then supress all the branch starting at $x$ but will not supress any variable of the branch of $t$ (otherwise there would be more siblings).
+%\end{proof} \todo{maybe I can do an induction on the number of trigger applied to $x$.}
 
 %\begin{theorem} 
 %The knowledge base $O = (R,F)$ admits a finite universal model if and only if the core chase algorithm terminates on $O$
@@ -616,7 +853,7 @@ So there exists a unique term $t$ and a unique variable $x$ such that $t$ is a p
 %
 %\begin{proof}
 %We have shown that on a factbase of the theory, our $\mathcal{ALC}$-pruning operation was computing a core of the factbase. Consequently, the theorem 2.1 concludes the proof. 
-%\end{proof}
+\end{proof}
 
 \subsection{Generalisation}
 
@@ -644,7 +881,7 @@ A(x) &\rightarrow \exists y. T(x,y) \wedge B(y) \\
 S(x,y) &\rightarrow R(x,y) \\
 T(x,y) &\rightarrow R(x,y) \\
 \end{align*}
-By applying the rules one, two, three and then four, we have:
+By applying the rules one, two, three and then four, we have the factbase $G$:
 
 \begin{center}
 \begin{tikzpicture}[scale=0.2]
@@ -679,21 +916,12 @@ Then, when we apply a merging:
 \end{tikzpicture}
 \end{center}
 
-The merging is bad because a core chase will never create this factbase.
+The merging is bad because this factbase is not a universal model of $O$.
 
 \end{example}
 
-\begin{definition}
-For a factbase $F'$ and two terms $t$ and $t'$, we note \emph{$R_{F'}(t,t')$} the set of binary predicates $P$ such that $P(t,t')\in F'$.
-\end{definition}
-
 We keep the same relation $\prec$. It is still a strict partial order over the set of variables.
 
-\begin{definition}[$\mathcal{ALCH}$-Siblings]
-Let $F'$ be a factbase that occured in a core chase derivation of the knowledge base $O$. Two terms $t_1$ and $t_2$ such that $t_1 \neq t_2$ are \emph{$\mathcal{ALCH}$-siblings} if there exists a term $t$ such that $R_{F'}(t,t_1) \neq \emptyset$, $R_{F'}(t,t_2) \neq \emptyset$, and ($C_{F'}(t_1) \subseteq C_{F'}(t_2) \wedge R_{F'}(t_1) \subseteq R_{F'}(t_2)$) or ($C_{F'}(t_2) \subseteq C_{F'}(t_1) \wedge R_{F'}(t_2) \subseteq R_{F'}(t_1)$). In this case, $t_1$ is a \emph{powerful $\mathcal{ALCH}$-sibling} of $t_2$ if $C_{F'}(t_2) \subseteq C_{F'}(t_1) \wedge R_{F'}(t_1) \subseteq R_{F'}(t_2)$. Otherwise, it is a \emph{powerless $\mathcal{ALCH}$-sibling}.
-\end{definition}
-
-The merge chase will now use the $\mathcal{ALCH}$-siblings notion instead of the siblings notion.
 
 
 
