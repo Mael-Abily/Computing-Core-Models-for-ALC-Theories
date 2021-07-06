@@ -922,14 +922,14 @@ $\Merge(G)$ is a core but not necessarily the core of $G$.
 
 To prove that the merge chase is a correct algorithm, we have to show that:
 \begin{itemize}
-\item It preserves the universality.
-\item A merge step computes a core.
+\item It preserves the universality.\todo{Be a bit more precise here: say that all elements in the sequence are universal.}
+\item A merge step computes a core.\todo{The result of the merge step is a core.}
 \end{itemize}
 
-To simplify the proofs, we will allow us to use the same triggers. It will not really change the result because we can just add redundances and it preserves the terminaison. We cannot use anymore our definition of application so we redefine it. A naive trigger is a triple $t=(\alpha,\sigma,\hat \sigma)$ where $(\alpha,\sigma)$ is an oblivious trigger and  $\hat \sigma$ is a subsitution that extends $\sigma$ over $\Vars(\textit{Head}(\alpha))$. The factbase $\Appl(F,t)=F \cup \hat \sigma(\textit{Head}(\alpha))$ is an application on the factbase $F$ through the trigger $t$.
+To simplify the proofs, we will allow us to use the same triggers. It will not really change the result because we can just add redundances and it preserves the terminaison. We cannot use anymore our definition of application so we redefine it.\todo{I am not sure that this is neither necessary nor helpful.}\ A naive trigger is a triple $t=(\alpha,\sigma,\hat \sigma)$ where $(\alpha,\sigma)$ is an oblivious trigger and  $\hat \sigma$ is a subsitution that extends $\sigma$ over $\Vars(\textit{Head}(\alpha))$. The factbase $\Appl(F,t)=F \cup \hat \sigma(\textit{Head}(\alpha))$ is an application on the factbase $F$ through the trigger $t$.
 
 \begin{proposition} \label{step1}
-Let $D = F_0,trig_1,F_1,\ldots, trig_m,F_m$ be a chase derivation of the knowledge base $O$. Let $x$ be mergeable on $t$ in $F_m$. Let $h$ be a substitution defined on $\Vars(\Tree_{F_m}(x))$ such that $h(x) =t$ and for $y \neq x$, $h(y)$ is a fresh variable. There exists an oblivious chase derivation $D' = F_0,trig_1,F_1,\ldots,trig_k,F_k$ of $O$ prolonging $D$ such that $F_k = F_m \cup h(\Tree_{F_m}(x))$ . We pose \emph{$F_{\Fut(F_m,t,x)}$}$=F_k$ and \emph{$h_{\Fut(F_m,t,x)}$}$ = h$.
+Let $D = F_0,trig_1,F_1,\ldots, trig_m,F_m$ be a chase derivation of the knowledge base $O$. Let $x$ be mergeable on $t$ in $F_m$. Let $h$ be a substitution defined on $\Vars(\Tree_{F_m}(x))$ such that $h(x) =t$ and for $y \neq x$, $h(y)$ is a fresh variable.\todo{I do not understand what $y$ is here}\ There exists an oblivious chase derivation $D' = F_0,trig_1,F_1,\ldots,trig_k,F_k$ of $O$ prolonging $D$ such that $F_k = F_m \cup h(\Tree_{F_m}(x))$ . We pose \emph{$F_{\Fut(F_m,t,x)}$}$=F_k$ and \emph{$h_{\Fut(F_m,t,x)}$}$ = h$.
 \end{proposition}
 
 Graphically, if we note $A=\Tree_{F_m}(t)$ and $B=\Tree_{F_m}(x)$, then we want do an oblivious derivation from the left factbase to the right factbase:
@@ -988,7 +988,7 @@ Let $tr_1 = (\alpha_1,\sigma_1, \hat \sigma_1),\ldots, tr_n =(\alpha_n,\sigma_n,
 \item the range of each $\hat \sigma_i$ contains at least one $\prec$-sucessor of $x$
 \item if $tr_i = trig_r$ and $tr_j =trig_l$, then $i <j$ implies $r<l$ (that is, $tr_1,\ldots,tr_n$ are oredered by application time).
 \end{itemize} 
-We note $tr_1'=(\alpha_1,\sigma_1',\hat \sigma_1'),\ldots,tr_n' = (\alpha_n,\sigma_n', \hat \sigma_n')$ where $\sigma_i' = h \circ \sigma_i$ and $\hat \sigma_i' = h \circ \hat \sigma_i$. We pose $F_{m+1} = \Appl(F_m,tr_1'),\ldots, F_{m+n} =\Appl(F_{m+n-1},tr_n')$ %and we pose $B_i' = \sigma_1'^s(Head(\alpha_1) \cup \ldots \cup \sigma_i'^s(Head(\alpha_i)$
+We note $tr_1'=(\alpha_1,\sigma_1',\hat \sigma_1'),\ldots,tr_n' = (\alpha_n,\sigma_n', \hat \sigma_n')$ where $\sigma_i' = h \circ \sigma_i$ and $\hat \sigma_i' = h \circ \hat \sigma_i$.\todo{I feel like filtering away triggers whose output is there would be a cleaner solution.}\ We pose $F_{m+1} = \Appl(F_m,tr_1'),\ldots, F_{m+n} =\Appl(F_{m+n-1},tr_n')$ %and we pose $B_i' = \sigma_1'^s(Head(\alpha_1) \cup \ldots \cup \sigma_i'^s(Head(\alpha_i)$
 
 We show by induction on $i \in \{0,\ldots, n\},H(i)$: the sequence $D_i = D,tr_1',F_{m+1},\ldots, tr_i',F_{m+i}$ is an oblivious derivation. 
 
@@ -996,14 +996,14 @@ For i = 0, $D_0 = D$ is an oblivious derivation, so $H(0)$ is true.
 
 Suppose that $H(i-1)$ is true for $i \in \{1,\ldots,n\}$. Depending on the form of the rule $\alpha_i$, there exists four different cases:
 	\begin{itemize}
-	\item First case $\alpha_i$ is of the form $A(u) \rightarrow \exists v.R(u,v) \wedge B(v)$. We have $A(\sigma_i(u)) \in F_m$.
+	\item First case $\alpha_i$ is of the form $A(u) \rightarrow \exists v.R(u,v) \wedge B(v)$.\todo{Just write ``If $\alpha_i$ is of the form\ldots''} We have $A(\sigma_i(u)) \in F_m$.
 		\begin{itemize}
 		\item If $\sigma_i(u) = x$, then $A(x) \in F_m$. As $t$ is a strong sibling of $x$ in $F_m$, $A(t) \in F_m$. So $A(\sigma_i'(u)) \in F_{m+i-1}$ since $\sigma_i'(u) = t$.  
 		\item If $x \prec^+ \sigma_i(u)$, then the fact $A(\sigma_i(u)))$ has been introduced by an oblivious trigger in $\{tr_1,\ldots,tr_{i-1}\}$. We have then by induction hypothesis, $A(\sigma_i'(u)) \in F_{m+i-1)}$.
 		\end{itemize}
 Therefore $tr_{i}'$ is an oblivious trigger on $F_{m+i-1}$. So $H(i)$ is true.
 
-	\item Second case $\alpha_i$ is of the form $A_1(u) \wedge A_2(u) \rightarrow B(u)$. We have $x \prec^+ \sigma_i(u)$. The facts $A_1(\sigma_i(u))$ and $A_2(\sigma_i(u))$ have been introduced by two oblivious trigger in $\{tr_1,\ldots,tr_{i-1}\}$. So by induction hypothesis,$A_1(h(\sigma_i(u))),A_2(h(\sigma_i(u))) \in F_{m+i-1}$. So $tr_{i}'$ is an oblivious trigger on $F_{m+i-1}$. Consequently, $H(i)$ is true.
+	\item Second case $\alpha_i$ is of the form $A_1(u) \wedge A_2(u) \rightarrow B(u)$. We have $x \prec^+ \sigma_i(u)$.\todo{Don't you have to consider the case where $x = u$?}\ The facts $A_1(\sigma_i(u))$ and $A_2(\sigma_i(u))$ have been introduced by two oblivious trigger in $\{tr_1,\ldots,tr_{i-1}\}$. So by induction hypothesis,$A_1(h(\sigma_i(u))),A_2(h(\sigma_i(u))) \in F_{m+i-1}$. So $tr_{i}'$ is an oblivious trigger on $F_{m+i-1}$. Consequently, $H(i)$ is true.
 
 \item Third case $\alpha_i$ is of the form $A(u) \wedge R(u,v) \rightarrow B(v)$.
 	\begin{itemize}
@@ -1025,7 +1025,7 @@ We have proved the heredity. So, $D_n$ is the oblivious derivation that we was l
 
 \begin{proposition}
 Let $D = F_0,trig_1,F_1,\ldots, trig_m,F_m$ be an oblivious chase derivation of the knowledge base $O$. Assume that $x$ is mergeable on $t$ in $F_m$.  
-$F_{\Fut(F_m,t,x)}$ is equivalent to the atomic merging of $x$ over $t$ in $F_m$.
+$F_{\Fut(F_m,t,x)}$ is equivalent to the atomic merging of $x$ over $t$ in $F_m$.\todo{I would say that it is a superset, which is even stronger.}
 \end{proposition}
 
 \begin{proof}
@@ -1051,13 +1051,13 @@ $h_1$ is a homomorphism from $F_{\Fut(F_m,t,x)}$ to $F'$ and $h_2$ is a homomorp
 We have proved that the atomic merge chase preserves the universality, therefore:
 
 \begin{proposition}
-The atomic merge chase and the merge chase computes an universal model when they terminate.
+The atomic merge chase and the merge chase computes an universal model when they terminate.\todo{Via induction on the sequence.}
 \end{proposition}
 
 By Proposition \cite{core}, the merge chase computes a core, therefore, we can use the the results of the paper \cite{core_chase} to have the following theorem:
 
 \begin{theorem}
-The merge chase computes an universal model if and only if there exists an universal model.
+The merge chase computes an universal model if and only if there exists an \todo{finite} universal model.\todo{We need to discuss fairness here.}
 \end{theorem}
 
 
