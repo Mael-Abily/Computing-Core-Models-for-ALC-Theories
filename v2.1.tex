@@ -531,7 +531,7 @@ In this section, we only consider factbases with predicates of arity one or two.
 Horn-$\mathcal{ALCH}$ has been introduced in \cite{Horn-ALC}
 
 \begin{definition}[Horn-$\mathcal{ALCH}$ axioms]
-A \emph{Horn-$\mathcal{ALCH}$ axiom} is an existential rule of the form:
+A \emph{Horn-$\mathcal{ALCH}$ axiom} is an existential rule of the form:\todo{of one of the following forms:}
 \begin{align}
 A_1(x) \wedge A_2(x) &\rightarrow B(x) \\
 A(x) \wedge R(x,y) &\rightarrow B(y) \\
@@ -545,18 +545,18 @@ R_1(x,y) \wedge R_2(x,y) &\rightarrow S(x,y)
 
 We fix $O=(R,G)$ a knowledge base for this section where $R$ is a Horn-$\mathcal{ALCH}$ rule set.
 
-We can notice that all the variables are introduced by a Horn-$\mathcal{ALCH}$ axiom of the form $(3)$.
+We can notice that all the variables are introduced by a Horn-$\mathcal{ALCH}$\todo{Create a macro for Horn-ALC.} axiom of the form $(3)$.\todo{Note that $(3)$ is the only rule that features existentially quantified variables.}\todo{Use the commands ``href'' and ``label'' to reference items within the align environment.}
 
-We will now introduce some notions in order to introduce the new chase and prove that it does what we want.
+We will now introduce some notions in order to introduce the new chase and prove that it does what we want.\todo{A bit informal; be more precise; describe ``what is what we want''.}
 
 \begin{definition}
-Let $D = F_0,F_1,\ldots,F_k$ be a chase derivation of the knowledge base $O$. For a term $t$ and a variable $x$ appearing in $F_k$, we say that $t \prec x$ if there exists a rule $\alpha$ and a variable $y$ such that $x= f_\alpha^y(t)$. 
-We write $\prec^+$ to denote the transitive closure of $\prec$. We note \emph{$\su(t)$}$= \{y \in \Vars \mid t = y \vee t \prec^+ y\}$
+Let $D = F_0,F_1,\ldots,F_k$ be a chase derivation of the knowledge base $O$. For a term $t$ and a variable $x$ appearing in $F_k$, we say that $t \prec x$ if there exists a rule $\alpha$ and a variable $y$ such that $x= f_\alpha^y(t)$.\todo{Alternatively, you may simply say ``if $x$ is of the form $f(t)$''.}
+We write $\prec^+$ to denote the transitive closure of $\prec$. We note \emph{$\su(t)$}$= \{y \in \Vars \mid t = y \vee t \prec^+ y\}$.\todo{I would use ``Desc'' (for descendants) instead of ``Succ''. Note that, usually, we say successors to refer to the immediate descendants.}
 \end{definition}
 
 \begin{proposition} 
-Let $F$ be a factbase that occurs in a chase derivation of the knowledge base $O$. For a term $t$ and a variable $x$, if there exists a rule $\alpha$ and a variable $y$ such that $x= f_\alpha^y(t)$, then $\alpha$ is of the form $(3)$.
-\end{proposition}
+Let $F$ be a factbase that occurs in a chase derivation of the knowledge base $O$. For a term $t$ and a variable $x$, if there exists a rule $\alpha$ and a variable $y$ such that $x= f_\alpha^y(t)$, then $\alpha$ is of the form $(3)$.\todo{Use the commands ``href'' and ``label'' to reference items within the align environment. }
+\end{proposition}\todo{This statement can be generalised: Consider a term $t$ that occurs in a chase derivation of some Horn-$\mathcal{ALCH}$ knowledge base. Then, $t$ is a constant or $t$ is of the form $f^y_\alpha(u)$ where $u$ is a term, $\alpha$ is a rule of the form $(3)$, and $y$ is the (only) existentially quantified variable occurring in $\alpha$.}
 
 
 
@@ -587,10 +587,14 @@ Let $F$ be a factbase that occurs in a chase derivation of the knowledge base $O
 We can now define the notion of tree of a term $t$ that is all the facts containing only variables in $\su(t)$:
 
 \begin{definition}[Tree]
-Let $F$ be a factbase that occurs in a chase derivation of the knowledge base $O$. For a term $t$, we pose 
+Let $F$ be a factbase that occurs in a chase derivation of the knowledge base $O$. For a term $t$, we pose\todo{For a term $t$ occurring in a chase derivation of the Horn-$ALC$ knowledge base $O$, we pose:} 
 \begin{align*}
 \Tree_{F}(t) = &\{A(t') \mid A(t') \in F \wedge t' \in \su(t)\} \\
  \cup &\{R(t',x) \mid R(t',x) \in F \wedge t',x \in \su(t)\}
+\end{align*}
+\begin{align*}
+	\Tree_{F}(t) = \{&A(u) \mid A(u) \in F \wedge u \in \su(t)\}~\cup \\
+	\{&R(u,x) \mid R(u,x) \in F \wedge u,x \in \su(t)\}
 \end{align*}
 \end{definition}
 
@@ -604,27 +608,27 @@ Let $F$ be a factbase that occurs in a chase derivation of the knowledge base $O
 %\end{itemize}
 %\end{definition}
 
-We now define the notion of mergeable variable in order to consider a new operation.
+We now define the notion of mergeable variable in order to consider a new operation.\todo{which will later be used to define an operation to efficiently compute cores.}
 
 \begin{definition}[Mergeable variable]
 Let $F$ be a factbase that occurs in a chase derivation of the knowledge base $O$. For two terms $t_1$ and $t_2$ such that $t_1 \neq t_2$, $t_1$ is \emph{mergeable} on $t_2$ in $F$ if:
 \begin{itemize}
 \item $t_1$ is a variable,
-\item $\Preds_{F}^1(t_1) \subseteq \Preds_{F}^1(t_2)$,
+\item $\Preds_{F}^1(t_1) \subseteq \Preds_{F}^1(t_2)$,\todo{add ``and''}
 \item there exists a term $t$ such that
 	\begin{itemize}
 	\item $\Preds^2_{F}(t,t_1) \neq \emptyset$, and
 	\item $\Preds_{F}^2(t,t_1) \subseteq \Preds_{F}^2(t,t_2)$.
-	\end{itemize}
+	\end{itemize}\todo{I would remove this last itemize.}
 \end{itemize}
 In this case, we say that $t_1$ is a \emph{mergeable variable}.
 \end{definition}
 
-We imposed that $t_1$ is mergeable on $t_2$ only if $t_1$ is a variable because, we will latter map $t_1$ on $t_2$ and it is not possible to map a constant to another term.
+We imposed that $t_1$ is mergeable on $t_2$ only if $t_1$ is a variable because, we will latter map $t_1$ on $t_2$ and it is not possible to map a constant to another term.\todo{Unclear intuition.}
 
 %Notice that the definition of siblings can be shorted because, due to the form of the Horn-$\mathcal{ALCH}$ axioms, for a term $t$, there exists a unique term $t'$ and a unique binary relation $R$ such that $R(t',t)\in F$. So we can replace the last condition in the definition about the existence of $t$ by: there exists a term $t$ and a predicate $R$ such that $R(t,t_1) \in F$ and $R(t,t_2) \in F$. We write this more complex definition because it works in more general cases.
 
-When $x$ is mergeable on $t$ in $F$, we want to say that all the triggers applied on $x$ and on the $\prec$-successor of $x$ can be or have already been applied on $t$ and on the $\prec$-successor of $t$. Therefore, all the facts containing $x$ and the $\prec$-successor of $x$ are or will be redundant. But we do not want to supress all these facts because we know that if they are not yet in the tree of $t$, they would be computed so we would like to "recycle" these facts. That is this intuition that leads us to define atomic merging:
+When $x$ is mergeable on $t$ in $F$, we want to say that all the triggers applied on $x$ and on the $\prec$-successor of $x$ can be or have already been applied on $t$ and on the $\prec$-successor of $t$. Therefore, all the facts containing $x$ and the $\prec$-successor of $x$ are or will be redundant. But we do not want to supress all these facts because we know that if they are not yet in the tree of $t$, they would be computed so we would like to "recycle"\todo{This is how you write something in quotes in Latex: ``recycle''.} these facts. That is this intuition that leads us to define atomic merging:
 
 
 \begin{definition}[atomic merging]
@@ -694,7 +698,7 @@ For example, in the figure below, $f_\alpha^y(a)$ is mergeable on $b$ in the lef
 We want to show that the atomic merge is an operation that preserves the universality. It is the goal of the two next propositions.
 
 \begin{proposition} \label{step1}
-Let $D = F_0,trig_1,F_1,\ldots, trig_m,F_m$ be an oblivious chase derivation of the knowledge base $O$. Let $x$ be mergeable on $t$ in $F_m$. There exists an oblivious chase derivation $D' = F_0,trig_1,F_1,\ldots,trig_k,F_k$ of $O$ prolonging $D$ such that $F_k = F_m \cup h_{x/t}(\Tree_{F_m}(x))$ . We pose \emph{$\Fut(F_m,t,x)$}$=F_k$.
+Let $D = F_0,trig_1,F_1,\ldots, trig_m,F_m$ be an oblivious chase derivation of the knowledge base $O$.\todo{Will this be enough? Note that later on we are not only considering oblivious chase derivations.} Let $x$ be mergeable on $t$ in $F_m$. There exists an oblivious chase derivation $D' = F_0,trig_1,F_1,\ldots,trig_k,F_k$ of $O$ prolonging $D$ such that $F_k = F_m \cup h_{x/t}(\Tree_{F_m}(x))$ . We pose \emph{$\Fut(F_m,t,x)$}$=F_k$.
 \end{proposition}
 
 Graphically, if we note $A=\Tree_{F_m}(t)$ and $B=\Tree_{F_m}(x)$, then we want do an oblivious derivation from the left factbase to the right factbase:
@@ -748,16 +752,16 @@ To prove the result, we will look all the triggers dealing with the variables in
 \begin{proof}
 Let $tr_1 = (\alpha_1,\sigma_1),\ldots, tr_n =(\alpha_n,\sigma_n)$ be all the oblivious triggers in $\{trig_1,\ldots,trig_m\}$ such that
 \begin{itemize}
-\item the range of each $\sigma_i$ contains only variables in $\su(x)$
+\item the range of each $\sigma_i$ contains only variables in $\su(x)$.
 \item if $tr_i = trig_r$ and $tr_j =trig_l$, then $i <j$ implies $r<l$ (that is, $tr_1,\ldots,tr_n$ are oredered by application time).
 \end{itemize} 
 We note $h_{x/t}(tr_i)=(\alpha_i,h_{x/t} \circ \sigma_i)$ and $$B_i' = {h_{x/t} \circ \sigma_1^s}(Head(\alpha_1)) \cup \ldots \cup {h_{x/t} \circ \sigma^s_i}(Head(\alpha_{i}))$$
 
-We show by induction on $i \in \{0,\ldots, n\},H(i)$: There exists oblivious triggers $tr_1',\ldots,tr_r' \in \{h_{x/t} \circ \sigma_1,\ldots, h_{x/t} \circ \sigma_n\}$ such that, if we pose $F_{m+1} = \Appl(F_m,tr_1'),\ldots,F_{m+r} = \Appl(F_{m+r-1},tr_r')$, the sequence $D_i = D,tr_1',F_{m+1},\ldots, tr_r',F_{m+r}$ is an oblivious derivation and $B_i' \subseteq F_{m+r}$. 
+We show by induction on $i \in \{0,\ldots, n\},H(i)$: There exists oblivious triggers $tr_1',\ldots,tr_r' \in \{h_{x/t} \circ \sigma_1,\ldots, h_{x/t} \circ \sigma_n\}$\todo{Why don't we constructively define this sequence?}\ such that, if we pose $F_{m+1} = \Appl(F_m,tr_1'),\ldots,F_{m+r} = \Appl(F_{m+r-1},tr_r')$, the sequence $D_i = D,tr_1',F_{m+1},\ldots, tr_r',F_{m+r}$ is an oblivious derivation and $B_i' \subseteq F_{m+r}$. 
 
 For i = 0, $D_0 = D$ is an oblivious derivation and $B_0 = \emptyset$, so $H(0)$ is true.
 
-Suppose that $H(i-1)$ is true for $i \in \{1,\ldots,n\}$: $D_{i-1} = D,tr_1',F_{m+1},\ldots, tr_r',F_{m+r}$ is an oblivious derivation and $B_{i-1}' \subseteq F_{m+r}$.
+Suppose that $H(i-1)$ is true for $i \in \{1,\ldots,n\}$: $D_{i-1} = D,tr_1',F_{m+1},\ldots, tr_r',F_{m+r}$ is an oblivious derivation and $B_{i-1}' \subseteq F_{m+r}$.\todo{I would merge the last three paragraphs into one.}
 
 Depending on the form of the rule $\alpha_i$, there exists four different cases:
 	\begin{itemize}
@@ -766,12 +770,12 @@ Depending on the form of the rule $\alpha_i$, there exists four different cases:
 		\item If $\sigma_i(u) = x$, then $A(x) \in F_m$. As $t$ is a strong sibling of $x$ in $F_m$, $A(t) \in F_m$. So $A(h_{x/t}(\sigma_i(u))) \in F_{m+r}$ since $h_{x/t}(\sigma_i(u)) = t$.  
 		\item If $x \prec^+ \sigma_i(u)$, then the fact $A(\sigma_i(u)))$ has been introduced by an oblivious trigger in $\{tr_1,\ldots,tr_{i-1}\}$. So, by induction hypothesis, $A(h_{x/t}(\sigma_i(u))) \in F_{m+r}$.
 		\end{itemize}
-Therefore $h_{x/t}(tr_{i})$ is an oblivious trigger for $F_{m+r}$. 
+Therefore $h_{x/t}(tr_{i})$ is an oblivious trigger for $F_{m+r}$.\todo{Don't you have to check if the trigger has been applied? Also, don't we need to check its applicability to some element that comes before $F_{m+r}$ in the sequence?}
 
 	\item If $\alpha_i$ is of the form $A_1(u) \wedge A_2(u) \rightarrow B(u)$. We have $A_1(\sigma_i(u)),A_2(\sigma_i(u)) \in F_m$.
 		\begin{itemize}
 		\item If $\sigma_i(u) = x$, then $A_1(x),A_2(x) \in F_m$. As $t$ is a strong sibling of $x$ in $F_m$, we have $A_1(t),A_2(t) \in F_m$. So $A_1(h_{x/t}(\sigma_i(u))),A_2(h_{x/t}(\sigma_i(u))) \in F_{m+r}$ since $h_{x/t}(\sigma_i(u)) = t$.  
-		\item If $x \prec^+ \sigma_i(u)$, then the fact $A_1(\sigma_i(u))),A_2(\sigma_i(u)))$ has been introduced by an oblivious trigger in $\{tr_1,\ldots,tr_{i-1}\}$. So, by induction hypothesis, $A_1(h_{x/t}(\sigma_i(u))),A_2(h_{x/t}(\sigma_i(u))) \in F_{m+r}$.
+		\item If $x \prec^+ \sigma_i(u)$, then the fact $A_1(\sigma_i(u))),A_2(\sigma_i(u)))$ has been introduced by an oblivious trigger in $\{tr_1,\ldots,tr_{i-1}\}$\todo{This part may need a bit more arguing.}. So, by induction hypothesis, $A_1(h_{x/t}(\sigma_i(u))),A_2(h_{x/t}(\sigma_i(u))) \in F_{m+r}$.
 		\end{itemize}
 Therefore $h_{x/t}(tr_{i})$ is an oblivious trigger for $F_{m+r}$.  
 
@@ -806,19 +810,19 @@ The atomic merging of $x$ on $t$ in $F_m$ is $h_{x/t}(F_m)$.
 
 By the Proposition \ref{step1}, $\Fut(F_m,t,x)= F_m \cup h_{x/t}(\Tree_{F_m}(x))$. So, $h_{x/t}(F_m) \subseteq \Fut(F_m,t,x) $ since $\Fut(F_m,t,x) = \Tree_{F_m}(x) \cup h_{x/t}(F_m)$.
 
-As $h_{x/t}(\Fut(F_m,t,x)) = h_{x/t}(F_m)$, we have that $h_{x/t}(F_m) \models \Fut(F_m,t,x)$
+As $h_{x/t}(\Fut(F_m,t,x)) = h_{x/t}(F_m)$, we have that $h_{x/t}(F_m) \models \Fut(F_m,t,x)$.\todo{Merge the last three sentences into a single paragraph.}
 \end{proof}
 
-The last two propositions shows the following theorem:
+The last two propositions shows the following theorem:\todo{The following theorem is a corollary of Propositions 3.5 and 3.6:}\todo{We cannot say that ``a proposition shows''.}
 
 \begin{theorem} \label{universality atomic merge}
-The atomic merge is an operation that preserves the universality.
+The atomic merge is an operation that preserves the universality.\todo{I would make a more precise statement. For instance, I would specify that, when applied to a factbase in an merge chase sequence, the atomic merge operation preserves universality.}
 \end{theorem}
 
 The following definition describes the operation that will replace the computation of the core in the core chase. We will show that for a chase derivation $D =F_0,...,F_k$ of $O$, if we apply our operation on $F_k$, then it computes the core of a factbase that could have been produced by continuing the derivation $D$.
 
 \begin{definition}
-For a factbase $F$ that occurs in a chase derivation of the knowledge base $O$, a \emph{merge} sequence of $F$ is a sequence $F_0,\ldots,F_n$ of factbases such that:
+For a factbase $F$ that occurs in a chase derivation\todo{The notion of a chase derivation has not been introduced yet.}\ of the knowledge base $O$, a \emph{merge} sequence of $F$ is a sequence $F_0,\ldots,F_n$ of factbases such that:
 \begin{itemize}
 \item $F_0 = F$.
 \item For $i \in \{1,\ldots,n\}$, the factbase $F_i$ is the atomic merging of a variable $x$ on a term $t$ in $F_{i-1}$.
@@ -895,10 +899,10 @@ The figure below is an example of merging where we merge the factbase of the lef
 \end{tikzpicture}
 \end{center}
 
-We can notice that the order of variables we choose is really important because an atomic merging can create mergeable variables. In this example, if we treat $f_\beta^z(f_\alpha^z(a))$ before $f_\alpha^z(a)$, then at the moment where we treat $f_\beta^z(f_\alpha^z(a))$, it does not have any term $t$ yet such that $f_\beta^z(f_\alpha^z(a))$ is mergeable on $t$ so at the end, we get the factbase of the middle and we will not have merged every possible mergeable variable.
+We can notice that the order of variables we choose is really important because an atomic merging can create mergeable variables. In this example, if we treat $f_\beta^z(f_\alpha^z(a))$ before $f_\alpha^z(a)$, then at the moment where we treat $f_\beta^z(f_\alpha^z(a))$, it does not have any term $t$ yet such that $f_\beta^z(f_\alpha^z(a))$ is mergeable on $t$ so at the end, we get the factbase of the middle and we will not have merged every possible mergeable variable.\todo{Nice example!}
 \end{example}
 
-The merge operation uses only atomic merge, so by Theorem \ref{universality atomic merge}:
+The merge operation uses only atomic merge\todo{Minor problem here: the results re. the universality of atomic merging can only be applied to fact sets that occur during the computation of the oblivious chase.}, so by Theorem \ref{universality atomic merge}:
 
 \begin{theorem} \label{universality merge}
 The merge is an operation that preserves the universality.
@@ -913,7 +917,7 @@ A \emph{merge derivation} for a knowledge base $O = (R,F)$ is a (possibly infini
 \begin{definition}[derivation]
 A merge derivation $D = F_0, F_1, F_2, \ldots$ for a knowledge base $O = (R,F)$ is \emph{fair} if: 
 \begin{itemize}
-\item For every $i$, for every oblivious trigger $t$ applicable on $F_i$, there exists $k > i$ such that $\Appl(F_{k},t) = F_k$.
+\item For every $i$, for every oblivious trigger $t$ applicable on $F_i$, there exists $k > i$ such that $\Appl(F_{k},t) = F_k$.\todo{Problem here: the merging operation will remore things! Messes up with ths notion of fairness.}
 \item For every $i$, there exists $k \geq i$ such that $F_k$ is a core.
 \end{itemize}
 \end{definition} 
@@ -929,12 +933,12 @@ The merge chase $D=F_0,F_1,F_2,\ldots$ \emph{terminates} on $O$ if it is a finit
 
 
 
-It is really important that the merging does all the possible atomic merging that it can do. Otherwise, the merge chase may not terminates on some knowledge base whereas there exists a finite universal model (like in the next example) and we want that the merge chase terminates on all knowledge base that admits a finite universal model. 
+It is really important that the merging does all the possible atomic merging that it can do. Otherwise, the merge chase may not terminates on some knowledge base whereas there exists a finite universal model (like in the next example) and we want that the merge chase terminates on all knowledge base that admits a finite universal model.\todo{Bit of a long sentence.}
 
 \begin{example} \label{necessity of atomic merge}
 We consider in the example that $F= \{R(a,b),R(b,a),A(a),A(b)\}$ and $R = \{\alpha, \beta\}$ where $\alpha = A(x) \rightarrow \exists y.R(x,y) \wedge A(y)$ and $\beta=B(x) \rightarrow A(x)$. We consider the atomic merge chase derivation $F_0 =F,F_1,F_2,...$ We applied to $F_0$ the oblivious trigger $t_1 = (\alpha, \{x \mapsto a\})$, we then applied to $F_1$, the oblivious trigger $t_2 = (\alpha, \{x \mapsto f_\alpha^y(a)\})$ giving rise to the first factbase of the figure below. We then apply the oblivious trigger $t_3 = (\beta, \{x \mapsto b\})$ to obtain the factbase $F_3$. At this moment, $f_\alpha^y(a)$ is mergeable on $b$ so we do an atomic merging of $f_\alpha^y(a)$ on $b$ to get $F_4$ that is the second factbase of the figure. $F_5$ is obtained by the application of the oblivious trigger $t_4 = (\alpha, \{x \mapsto f_\alpha^y(b)\})$ and is the third factbase of the figure. At this moment, $f_\alpha^y(b)$ is mergeable on $a$ so we do an atomic merging of $f_\alpha^y(b)$ on $a$ to get $F_6$ that is the last factbase of the figure. We can repeat this infinitely. But $O$ admits a finite universal model: $U = F \cup \{B(b)\}$. So the version of the chase where we consider partial merging is not what we want.
 
-\todo{changer l'example}
+\todo{changer l'example -> why?}
 \begin{center}
 \begin{tikzpicture}[scale=0.2]
 \tikzstyle{every node}+=[inner sep=0pt]
@@ -1040,13 +1044,13 @@ For a factbase $G$ obtained by applying some Horn-$\mathcal{ALCH}$ axioms on $O$
 \begin{proof}
 %\item The $\mathcal{ALCH}$-pruning algorithm only take off facts of the factbase. Consequently, $\textit{prune}(G) \subseteq G$.
 %\item We consider the homorphism $h:G \to \textit{prune}(G)$ created during the $\mathcal{ALCH}$-pruning algorithm. For $x \in \Vars(G)$, suppose that $h(x) \neq x$. According to the $\mathcal{ALCH}$-pruning algorithm, $x$ has been erased \todo{à préciser}. So $x \notin \Vars(\textit{prune}(G))$. So ${h}_{|\textit{Prune}(G)}=id_{|\textit{Prune}(G)}$. We have shown that $h$ is a retract so $\textit{prune}(G)$ is a retract of $G$.
-Suppose for a contradiction that $\Merge(G)$ is not a core. There exists $G' \subsetneq \Merge(G)$ such that $G'$ is a retract of $\Merge(G)$. By Proposition \cite{retract}, there exists then a retractation $h$ from $\Merge(G)$ to $G'$. We have $var(\Merge(G))\setminus var(G') \neq \emptyset$. Let $x$ be a $\prec$-minimal variable of this set. The term $x$ is a variable, so has been introduced by the chase due to the axiom 3. So there exists a term $t$ such that $t \prec x$. 
+Suppose for a contradiction that $\Merge(G)$ is not a core. There exists $G' \subsetneq \Merge(G)$ such that $G'$ is a retract of $\Merge(G)$. By Proposition \cite{retract}\todo{Use "href" instead of "cite".}, there exists then a retractation $h$ from $\Merge(G)$ to $G'$. We have $var(\Merge(G))\setminus var(G') \neq \emptyset$. Let $x$ be a $\prec$-minimal variable of this set. The term $x$ is a variable, so has been introduced by the chase due to the axiom 3\todo{Rule of the form (3).}. So there exists a term $t$ such that $t \prec x$. 
 \begin{itemize}
 \item We have $\Preds^2_{\Merge(G)}(t,x) \neq \emptyset$. By $\prec$-minimality of $x$, $t \in \Vars(G')$. So, as $h$ is a retractation: $h(t) = t$, so for $R \in \Preds^2_{\Merge(G)}(t,x)$, $h(R(t,x)) = R(t,h(x)) \in \Merge(G)$ and so $R \in \Preds^2_{\Merge(G)}(t,h(x))$. Thus $\Preds^2_{\Merge(G)}(t,x) \subseteq \Preds^2_{\Merge(G)}(t,h(x))$ and $t \prec h(x)$.
 \item $x \notin G'$ and $h(x) \in G'$ so $h(x) \neq x$. 
 \item Let $A \in \Preds^1_{\Merge(G)}(x)$. $h(A(x)) \in \Merge(G)$ so $A(h(x)) \in \Merge(G)$ so $\Preds^1_{\Merge(G)}(x) \subseteq \Preds^1_{\Merge(G)}(h(x))$. 
 \end{itemize}
-Consequently, $x$ is mergeable on $h(x)$ in $\Merge(G)$: contradiction. So $\Merge(G)$ is a core.
+Consequently, $x$ is mergeable on $h(x)$ in $\Merge(G)$: contradiction\todo{which results on a contradiction}. So\todo{He} $\Merge(G)$ is a core.
 \end{proof}	
 
 $\Merge(G)$ is a core but not necessarily the core of $G$.
@@ -1067,9 +1071,9 @@ The merge chase computes a finite universal model of $O$ when it terminates.
 \begin{proof}
 Let $D = F_0,\ldots,F_n$ be a merge chase for $O =(R,G)$. 
 \begin{itemize}
-\item The merge chase never take off ground facts and $G =F_0$ so $G \subseteq F_n$. We have then $F_n \models G$. Assume for a contradiction that $F_n \nvDash R$. There exists then a rule $\alpha$ in $R$ not satisfied by $F_n$: $F_n \vDash \textit{Body}(\alpha)$ and $F_n \nvDash \textit{Head}(\alpha)$. It means that there exists a substitution $\sigma$ from $\textit{Body}(\alpha)$ to $F_n$. Therefore, $t=(\alpha,\sigma)$ is an oblivious trigger for $F_n$. As the derivation $D$ is fair, $\Appl(F_n,t) = F_n$. Thus $\sigma^s(\textit{Head}(\alpha)) \subseteq F_n$ and so $F_n \models \alpha$: contradiction. We have then $F_n \models R$ so $F_n$ is a model of $O$.
+\item The merge chase never take off ground facts and $G =F_0$ so $G \subseteq F_n$. We have then $F_n \models G$. Assume for a contradiction that $F_n \nvDash R$. There exists then a rule $\alpha$ in $R$ not satisfied by $F_n$: $F_n \vDash \textit{Body}(\alpha)$ and $F_n \nvDash \textit{Head}(\alpha)$. It means that there exists a substitution $\sigma$ from $\textit{Body}(\alpha)$ to $F_n$. Therefore, $t=(\alpha,\sigma)$ is an oblivious trigger for $F_n$. As the derivation $D$ is fair, $\Appl(F_n,t) = F_n$. Thus $\sigma^s(\textit{Head}(\alpha)) \subseteq F_n$ and so $F_n \models \alpha$: contradiction. We have then $F_n \models R$ so $F_n$ is a model of $O$.\todo{What if the atoms of the head are removed bc of a merge operation? This needs to be briefly discussed.}
 \item According to Proposition \ref{universality application} and \ref{universality merge}, each operation of the merge chase conserves the universality so we can show by induction that $F_n$ is a universal model of $O$.
-\item We applied a finite number of operations and each operation either add a finite number of facts or remove facts so $F_n$ is finite.
+\item We applied a finite number of operations and each operation either add a finite number of facts or remove facts so $F_n$ is finite.\todo{This sentence can be ignored.}
 \end{itemize}
 \end{proof}
 
