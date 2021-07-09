@@ -535,7 +535,7 @@ A \emph{Horn-$\mathcal{ALCH}$ axiom} is an existential rule of the form:\todo{of
 \begin{align}
 A_1(x) \wedge A_2(x) &\rightarrow B(x) \\
 A(x) \wedge R(x,y) &\rightarrow B(y) \\
-A(x) &\rightarrow \exists y.R(x,y) \wedge B(y) \\
+A(x) &\rightarrow \exists y.R(x,y) \wedge B(y) \label{rule:horn-alc-exist} \\
 R(x,y) \wedge B(y) &\rightarrow A(x) \\
 R_1(x,y) \wedge R_2(x,y) &\rightarrow S(x,y)
 \end{align}
@@ -545,7 +545,7 @@ R_1(x,y) \wedge R_2(x,y) &\rightarrow S(x,y)
 
 We fix $O=(R,G)$ a knowledge base for this section where $R$ is a Horn-$\mathcal{ALCH}$ rule set.
 
-We can notice that all the variables are introduced by a Horn-$\mathcal{ALCH}$\todo{Create a macro for Horn-ALC.} axiom of the form $(3)$.\todo{Note that $(3)$ is the only rule that features existentially quantified variables.}\todo{Use the commands ``href'' and ``label'' to reference items within the align environment.}
+We can notice that all the variables are introduced by a Horn-$\mathcal{ALCH}$\todo{Create a macro for Horn-ALC.} axiom of the form \ref{rule:horn-alc-exist}.\todo{Note that $(3)$ is the only rule that features existentially quantified variables.}\todo{Use the commands ``href'' and ``label'' to reference items within the align environment.}
 
 We will now introduce some notions in order to introduce the new chase and prove that it does what we want.\todo{A bit informal; be more precise; describe ``what is what we want''.}
 
@@ -834,6 +834,7 @@ Then, $\Merge(F) = F_n$.
 \begin{example} 
 The figure below is an example of merging where we merge the factbase of the left. The variable $f_\alpha^z(a)$ is mergeable on $b$ so we do an atomic merging of $f_\alpha^z(a)$ on $b$ that gives us the factbase of the middle. Now, $f_\beta^z(b)$ is mergeable on $c$ so we do an atomic merging of $f_\beta^z(b)$ on $c$ that gives us the factbase of the right.
 
+\begin{figure}
 \begin{center}
 \begin{tikzpicture}[scale=0.2]
 \tikzstyle{every node}+=[inner sep=0pt]
@@ -898,6 +899,9 @@ The figure below is an example of merging where we merge the factbase of the lef
 \draw (55.1,-17.85) node [right] {$R$};
 \end{tikzpicture}
 \end{center}
+\label{figure:atomic-merging}
+\caption{Atomic Merging Example}
+\end{figure}
 
 We can notice that the order of variables we choose is really important because an atomic merging can create mergeable variables. In this example, if we treat $f_\beta^z(f_\alpha^z(a))$ before $f_\alpha^z(a)$, then at the moment where we treat $f_\beta^z(f_\alpha^z(a))$, it does not have any term $t$ yet such that $f_\beta^z(f_\alpha^z(a))$ is mergeable on $t$ so at the end, we get the factbase of the middle and we will not have merged every possible mergeable variable.\todo{Nice example!}
 \end{example}
@@ -1050,7 +1054,7 @@ Suppose for a contradiction that $\Merge(G)$ is not a core. There exists $G' \su
 \item $x \notin G'$ and $h(x) \in G'$ so $h(x) \neq x$. 
 \item Let $A \in \Preds^1_{\Merge(G)}(x)$. $h(A(x)) \in \Merge(G)$ so $A(h(x)) \in \Merge(G)$ so $\Preds^1_{\Merge(G)}(x) \subseteq \Preds^1_{\Merge(G)}(h(x))$. 
 \end{itemize}
-Consequently, $x$ is mergeable on $h(x)$ in $\Merge(G)$: contradiction\todo{which results on a contradiction}. So\todo{He} $\Merge(G)$ is a core.
+Consequently, $x$ is mergeable on $h(x)$ in $\Merge(G)$: contradiction\todo{which results on a contradiction}. So\todo{Hence,} $\Merge(G)$ is a core.
 \end{proof}	
 
 $\Merge(G)$ is a core but not necessarily the core of $G$.
@@ -1082,7 +1086,11 @@ If there exists a finite universal model for $O$, the merge chase terminates.
 \end{proposition}
 
 \begin{proof}
-
+\begin{itemize}
+\item Suppose for a contradiction that $O$ admits an infinite merge chase sequence $F_1, F_2, \ldots$.
+\item A term $t$ is redundant with respect to this sequence if $t \in F_i$ and $t \notin F_j$ for some $i < j$.
+\item For each $i = 0$, let $G_i$ be the maximal subset of $F_i$ that does not contain redundant terms.
+\end{itemize}
 \end{proof}
 
 
