@@ -1,0 +1,105 @@
+\documentclass{beamer}
+
+\usepackage{amsthm}
+
+
+\setlength{\parskip}{0.5em}
+
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{comment}
+\usepackage{pgf}
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata}
+\usepackage[utf8]{inputenc} 		% encodage des caracteres utilise (pour les caracteres accentues) -- non utilise ici.
+%\usepackage[latin1]{inputenc} 		% autre encodage
+\usepackage[english]{babel}		% pour une mise en forme "anglaise"
+\usepackage{amsmath,amssymb,amsthm}	% pour les maths
+\usepackage{graphicx}			% pour inclure des graphiques
+\usepackage{hyperref}			% si vous souhaitez que les references soient des hyperliens
+\usepackage{color}			% pour ajouter des couleurs dans vos textes
+\usepackage{todonotes}
+
+\def \N {\mathbb N}	
+
+\newcommand{\TodoDavid}[1]{\todo[color=green!40]{#1}}
+\newcommand{\TodoJF}[1]{\todo{#1}}
+
+\newcommand{\Vars}{\textbf{Vars}}
+\newcommand{\Terms}{\textbf{Terms}}
+\newcommand{\Preds}{\textbf{Preds}}
+\newcommand{\Csts}{\textbf{Csts}}
+\newcommand{\Merge}{\textit{Merge}}
+\newcommand{\Depth}{\textit{depth}}
+\newcommand{\Appl}{\textbf{appl}}
+\newcommand{\father}{\textbf{father}}
+\newcommand{\Tree}{\textit{Tree}}
+
+\title{Implementing the Core Chase for the Description Logic ALC}
+
+\author{Maël Abily}
+\institute{INRIA}
+\date{2021}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+\frametitle{Factbase}
+We consider variables $(x,y,\ldots)$, constants $(a,b,\textit{Pierre},\ldots)$ and predicates $(P,R,\textit{IsTheSonOf},\ldots)$
+
+\emph{term} = variable or constant.
+
+An \emph{atom} is of the form $P(t_1,\ldots,t_n)$ and is ground if $t_1,\ldots,t_n$ are constants.
+
+Example: $\textit{IsTheSonOf(Pierre,Francis)}$ is a ground atom.
+
+\emph{Factbase} = existentially closed formula of the form $\exists x_{1},\ldots,x_{n}.P_{1}(t_{1}^{1},\ldots,t_{k_{1}}^{1})\land \ldots\land P_{m}(t_{1}^{m},\ldots,t_{k_{m}}^{m})$ identify with:
+
+$\{P_{1}(t_{1}^{1},\ldots,t_{k_{1}}^{1}), \ldots, P_{m}(t_{1}^{m},\ldots,t_{k_{m}}^{m})\}$ 
+\end{frame}
+
+\begin{frame}
+\frametitle{Homomorphism}
+
+A \emph{substitution} $\sigma:X \to \Terms$ is a function where X is a set of variables. For example $\{x \mapsto z, y \mapsto a \}$ is a substitution from $\{x,y\}$ to \Terms.
+\begin{itemize}
+\item if $c \in \Csts$, then $\sigma(c) = c$;
+\item if $x \in \Vars \setminus X$, $\sigma(x) = x$;
+\item if $f = P(t_1,\ldots,t_n)$ is an atom, then $\sigma(f) = P(\sigma(t_1),\ldots,\sigma(t_n))$; and
+\item if $F = \{f_1,\ldots,f_n\}$ is a factbase, then $\sigma(F) = \{\sigma(f_1),\ldots,\sigma(f_n)\}$.
+\end{itemize}
+
+For two factbases $F$ and $F'$, a \emph{homomorphism} from $F$ to $F'$ is a substitution $\sigma:\Vars(F) \to \Terms$ where $\sigma(F) \subseteq F'$. 
+
+An \emph{isomorphism} $h$ from $F$ to $F'$ is a bijective homomorphism where its inverse is a homomorphism from $F'$ to $F$. 
+
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Entailment}
+
+A factbase $F$ \emph{entails} another factbase $Q$ if there exists a homomorphism from $Q$ to $F$.
+
+Example: The factbase $F = \{P(b,a),A(x)\}$ entails the factbase $Q = \{P(x,a),P(y,z)\}$ due to the homomorphism $\{x \mapsto b, y \mapsto b, z \mapsto a \}$.
+
+A factbase $G$ is a \emph{retract} of another factbase $F$ if $G \subseteq F$ and $G \models F$.
+
+
+If a factbase $F$ does not contain a strict retract, then we say that $F$ is a \emph{core}. A \emph{core} of a factbase $F$ (noted \emph{$\textit{core}(F)$}) is a subset of $F$ that is a core.
+
+The cores of a finite factbase F are unique up to isomorphism.
+
+
+\end{frame}
+
+\begin{frame}
+\frametitle{The conjunctive query entailment}
+
+\end{frame}
+
+
+
+\end{document}
