@@ -30,7 +30,7 @@
 \def \N {\mathbb N}	
 
 
-\title{Implementing the Core Chase for the Description Logic ALC}
+\title{Implementing the Core Chase for the Description Logic ALC\todo{Horn-ALC}}
 \author{Maël Abily}	
 
 
@@ -61,22 +61,22 @@
 
 \section{Introduction}
 
-The conjunctive query entailment is an important issue in database. This problem can be described in a first order logic background. We work on conjunctive formulas (that are formulas constructed only with conjunction and existential quantification) and queries that are conjunctive formulas without free variables; the answer of a query is either yes or no. For example $ \exists y. \textit{Human}(y) \wedge \textit{IsTheBrotherOf}(Pierre,y)$ is a query asking
+The conjunctive query entailment is an important issue in database\todo{knowledge representation}. This problem can be described in a first order logic background. We work on conjunctive formulas (that are formulas constructed only with conjunction and existential quantification) and queries that are conjunctive formulas without free variables; the answer of a query is either yes or no. For example $ \exists y. \textit{Human}(y) \wedge \textit{IsTheBrotherOf}(Pierre,y)$\todo{Use textit around Pierre.} is a query asking
 if Pierre has a parent. We also work on existential rules that are formulas of the form $\forall \vec x.\forall \vec y.( A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z))$ where $\vec u$ represents a tuple of variables.
 
-We can now define the conjunctive query entailment: Given a set $T$ of existential rules and conjunctive formulas, and given a query $Q$ determine if the set $T$ entails the query $Q$. For example, the set $T= \{\textit{IsTheBrotherOf(Pierre,Marie)},$ $\forall x \forall y. \textit{IsTheBrotherOf}(x,y) \rightarrow \textit{Human}(x) \wedge \textit{Human}(y) \}$ entails the query $Q=\exists y. \textit{Human}(y) \wedge \textit{IsTheBrotherOf}(Pierre,y)$.
+We can now define the conjunctive query entailmen\todo{the problem of conjunctive query entailment}t: Given a set $T$ of existential rules and conjunctive formulas, and given a query $Q$ determine if the set $T$ entails the query $Q$. For example, the set $T= \{\textit{IsTheBrotherOf(Pierre,Marie)},$ $\forall x \forall y. \textit{IsTheBrotherOf}(x,y) \rightarrow \textit{Human}(x) \wedge \textit{Human}(y) \}$ entails the query $Q=\exists y. \textit{Human}(y) \wedge \textit{IsTheBrotherOf}(Pierre,y)$.
 
 
 
-We usually use reasoning algorithms to answer the conjunctive query entailment.Note that in practice, a lot of formulas can be express via conjunctive formulas. By definition, a set $T$ of existential rules and conjunctive formulas entails a query $Q$ if every  model of $T$ is a model of $Q$. It is not practical because a knowledge base often have an infinite number of models.
+We usually use reasoning algorithms to answer the conjunctive query entailment. Note that in practice, a lot of formulas can be express\todo{expressed} via conjunctive formulas. By definition, a set $T$ of existential rules and conjunctive formulas entails a query $Q$ if every  model of $T$ is a model of $Q$. \todo{However, we cannot compute all models because...}It is not practical because a knowledge base often have an infinite number of models.
 
-To deal with this problem, we can compute an universal model of the set $T$. That is a model of $T$ that is entailed by all the models of $T$. If a such model $U$ exists, we just need to show that $U$ entails $Q$ to conclude that $T$ entails $Q$. Hence, to solve query entailment, we just have to compute a finite universal model $U$ for a given input $T$ and look if $U$ entails $Q$.
+To deal with this problem, we can compute an\todo{a}\ universal model of the set $T$. That is a model of $T$ that is entailed by all the models of $T$. If a such model $U$ exists, we just need to show that $U$ entails $Q$ to conclude that $T$ entails $Q$. Hence, to solve query entailment, we just have to compute a finite universal model $U$ for a given input $T$ and look\todo{check}\ if $U$ entails $Q$.
 
-To compute these models, we can use algorithms called the chase. We will present in this document the oblivious chase, the restricted chase and then the core chase. The last chase is the best in the sense of it terminates if and only if there exists a finite universal model. 
+To compute these models, we can use algorithms called the chase\todo{we can use the chase}. \todo{In this document, we present several variants of this algorithm:}We will present in this document the oblivious chase, the restricted chase and then the core chase. The last chase is the best in the sense of it\todo{it is the only one that} terminates if and only if there exists a finite universal model.
 
-Nevertheless, it is the slowest so it it is never used for practical applications. We will then focus on a restricted type of set $T$ where the set of conjunctive formulas is ground (that is there is no free-variable in the formula) and where the rules contained in $T$ are \ALCH\ axioms. It is an interesting restriction because we can represent the results of the chase by a tree.
+Nevertheless, it is the slowest\todo{I would just say that it is more complicated to implement.} so it it is never used for practical applications.\todo{Maybe explain a bit why is it hard to implement?} We will then focus on a restricted type of set $T$ where the set of conjunctive formulas is ground (that is there is no free-variable in the formula) and where the rules contained in $T$ are \ALCH\ axioms.\todo{Explain why \ALCH is interesting: talk a bit about description logics.} It is an interesting restriction because we can represent the results of the chase by a tree.\todo{I do not understand the intuitivion conveyed in this sentence.}
 
-We will create a quicker chase for this restriction, that we called the merge chase, that would produce the same output than the core chase. It is based on the idea that in a tree, there exists a sibling relation between the nodes (that is two nodes are siblings if they have the same father) and we will see that, in some conditions, a sibling of a node can be merged on this node like in the Figure \ref{figure:intro} where $y$ is a sibling of $t$ and is merged on it. We will then try to extend the merge chase on other type of knowledge bases.
+We will create a quicker chase for this restriction, that we called the merge chase, that would produce the same output than the core chase.\todo{We present a new variant of the chase for \ALCH theories which is also guaranteed to terminate if the input theory admits a finite universal model and is much easier to implement.} It is based on the idea that in a tree, there exists a sibling relation between the nodes (that is two nodes are siblings if they have the same father) and we will see that, in some conditions, a sibling of a node can be merged on this node like in the Figure \ref{figure:intro} where $y$ is a sibling of $t$ and is merged on it. We will then try to extend the merge chase on other type of knowledge bases.\todo{How to intuitiviely explain how the core chase is different from the merge chase: say that, in the core chase, one has to look for global endomorphisms in the sets of facts produced by the chase. In the merge chase, we only need to look for very local endomorphisms, which are much simpler to compute.}
 
 \begin{figure}
 \begin{center}
@@ -145,21 +145,21 @@ First of all, we will define the usefull notions for this paper and give some we
 
 \subsubsection{Syntax}
 
-We consider a set of variables \Vars, a set of constants \Csts, and a set of predicates \Preds. \Csts, \Vars, and \Preds\ are pairwise disjoint. A \emph{term} is a variable or a constant. We note \Terms\ the set of terms. If $t_1,\ldots,t_n$ are terms and $P$ is a predicate of arity $n$, then $P(t_{1},\ldots,t_{n})$ is an \emph{atom}. The atom $P(t_{1},\ldots,t_{n})$ is \emph{ground} if $t_1,\ldots,t_n$ are constants. We can now define a factbase that is a notion omnipresent in all the paper.  
+We consider a set of variables \Vars, a set of constants \Csts, and a set of predicates \Preds. \Csts, \Vars, and \Preds\ are pairwise disjoint.\todo{, which are pairwise disjoint.} A \emph{term} is a variable or a constant. We note \Terms\ the set of terms. If $t_1,\ldots,t_n$ are terms and $P$ is a predicate of arity $n$, then $P(t_{1},\ldots,t_{n})$ is an \emph{atom}. The atom $P(t_{1},\ldots,t_{n})$ is \emph{ground} if $t_1,\ldots,t_n$ are constants. We can now define a factbase that is a notion omnipresent in all the paper.  
 
 
 \begin{definition}
 A \emph{factbase} $F$ is an existentially closed conjunction of atoms, that is, a formula that does not contain occurrences of free variables and is of the form $\exists x_{1},\ldots,x_{n}.P_{1}(t_{1}^{1},\ldots,t_{k_{1}}^{1})\land \ldots\land P_{m}(t_{1}^{m},\ldots,t_{k_{m}}^{m})$ where $t_i^j$ are terms and $P_i$ are predicates. A factbase is \emph{ground} if each of its atoms is ground.
 \end{definition}
 
-Note that a ground factbase does not contain any  existential quantifiers. In some articles, the factbases are always considered as ground but in this document, we consider factbases that may not be ground. Consequently, a  boolean conjonctive query will be a factbase, so we will only talk about factbases and not introduce the notion of query.
+Note that a ground factbase does not contain any  existential quantifiers.\todo{I would remove this sentence} In some articles, the factbases are always considered as ground but in this document, we consider factbases that may not be ground.\todo{Note that, we do consider factbases that are not ground, unlike other authors.} Consequently, \todo{the notions of Boolean conjunctive queries and factbases coincide}a boolean conjonctive query will be a factbase, so we will only talk about factbases and not introduce the notion of query.
 
-For convenience, we identify factbases as sets of atoms, which allows us to  use  set  notions  such  as  set inclusion. For example, we identify the factbase $$\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$$ with the set of facts $$\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$$
+For convenience, we identify factbases as sets of atoms, which allows us to  use  set  notions\todo{and operators from set theory}  such  as  set inclusion. For example, we identify the factbase $$\exists x,x_{1},x_{2},x_{3}. P(x) \land Q(x,a) \land R(x_{1},x_{2},x_{3},b)$$ with the set of facts $$\{P(x),Q(x,a),R(x_{1},x_{2},x_{3},b)\}$$\todo{You can save vertical space here.}
 
 For a formula $A$, let \emph{$\Vars(A)$}, \emph{$\Csts(A)$}, and \emph{$\Terms(A)$} be the sets of variables, constants, and terms that occur in $A$, respectively.
 
 \begin{definition}
-A factbase $F$ \emph{entails} another factbase $G$ (often noted $F \models G$) if each interpretation satisfying $F$ satisfies $G$. $F$ is equivalent to $G$ if $F \models G$ and $G \models F$.
+A factbase $F$ \emph{entails} another factbase $G$ (often noted $F \models G$) if each interpretation satisfying $F$ satisfies $G$. $F$ is equivalent\todo{Emphasize.}\ to $G$ if $F \models G$ and $G \models F$.
 \end{definition}
 
 Intuitively, if $F \models G$, then $F$ is logically stronger than $G$ and from $F$, we can deduce $G$.
@@ -174,15 +174,15 @@ A \emph{substitution} $\sigma:X \to \Terms$ is a function where X is a set of va
 \item if $F = \{f_1,\ldots,f_n\}$ is a factbase, then $\sigma(F) = \{\sigma(f_1),\ldots,\sigma(f_n)\}$.
 \end{itemize}
 
-This definition leads us to the central notion of Homomorphism.
+This definition leads us to the central notion of Homomorphism\todo{lowercase}.
 
 \begin{definition}
 For two factbases $F$ and $G$, a \emph{homomorphism} from $F$ to $G$ is a substitution $\sigma:\Vars(F) \to \Terms$ where $\sigma(F) \subseteq G$. 
 \end{definition}
 
-Sometimes, we will say that we \emph{map} a variable $x$ to a term $t$ if $\sigma(x)=t$. An \emph{isomorphism} $h$ from $F$ to $G$ is a bijective homomorphism where its inverse is a homomorphism from $G$ to $F$. For the remainder of this paper, we identify sets of facts that are unique up to isomorphism. 
+Sometimes, we will say that we \emph{map} a variable $x$ to a term $t$ if $\sigma(x)=t$\todo{Is this notion really used? If not, trim.}. An \emph{isomorphism} $h$ from $F$ to $G$ is a bijective homomorphism where its inverse is a homomorphism from $G$ to $F$. For the remainder of this paper, we identify sets of facts that are unique up to isomorphism. 
 
-In practice, to know if $F \models G$, we use the following Theorem.
+In practice, to know if $F \models G$, we use the following Theorem\todo{lowercase unless you add the href after.}.
 
 %\begin{remark}
 %A bijective homomorphism is not necessarily an isomorphism. For example, 
@@ -199,7 +199,7 @@ In practice, to know if $F \models G$, we use the following Theorem.
 A factbase $F$ \emph{entails} another factbase $Q$ if and only if there exists a homomorphism from $Q$ to $F$.
 \end{theorem}
 
-The previous theorem has been proved in (\cite{base},theorem 6.2.3). For example, the factbase $F = \{P(b,a),A(x)\}$ entails the factbase $Q = \{P(x,a),P(y,z)\}$ due to the homomorphism $\{x \mapsto b, y \mapsto b, z \mapsto a \}$.
+The previous theorem has been proved in (\cite{base},theorem\todo{uppercase here} 6.2.3). For example, the factbase $F = \{P(b,a),A(x)\}$ entails the factbase $Q = \{P(x,a),P(y,z)\}$ due to the homomorphism $\{x \mapsto b, y \mapsto b, z \mapsto a \}$.
 
 
 
@@ -224,25 +224,26 @@ The previous theorem has been proved in (\cite{base},theorem 6.2.3). For example
 
 \subsubsection{Core}
 
-For a factbase $F$, let $id_{|F}$ be the substitution mapping each variable in $\Vars(F)$ to itself. And for a subsitution $\sigma$ defined on a factbase $G$ containing $F$, let $\sigma_{|F}$ be the subsitution $\sigma$ defined only on $\Vars(F)$. In practice, it is better to work on smaller factbases. It leads us to the notions of retracts and cores:
+For a factbase $F$, let $id_{|F}$ be the substitution mapping each variable in $\Vars(F)$ to itself. And for a subsitution $\sigma$ defined on a factbase $G$ containing $F$, let $\sigma_{|F}$ be the subsitution\todo{maximal subset of} $\sigma$ defined only on $\Vars(F)$. In practice, it is better to work on smaller factbases.\todo{I do not understand the intuition conveyed by this sentence.} It leads us to the notions of retracts and cores:
 
 \begin{definition}
 A factbase $G$ is a \emph{retract} of another factbase $F$ if $G \subseteq F$ and $G \models F$. A \emph{retractation} from $F$ to $G$ is a homomorphism $\sigma$ from $F$ to $G$ such that $\sigma_{|G}=id_{|G}$. $G$ is a \emph{strict retract} of $F$ if $G$ is a retract of $F$ and $G \neq F$.
 \end{definition}
 
-If $G$ is a rectract of $F$, then $G$ is as strong as $F$ and smaller. We impose that $\sigma_{|G}=id_{|G}$ in the definition of retractations because it helps us in the proof of Proposition \ref{core} thanks to the well known property:
+If $G$ is a rectract of $F$, then $G$ is as strong\todo{logically strong} as $F$ and\todo{yet} smaller. We impose that $\sigma_{|G}=id_{|G}$ in the definition of retractations because it helps us in the proof of Proposition \ref{core} thanks to the well known property:
 
 
 \begin{proposition} \label{retract}
 The factbase $G$ is a retract of the factbase $F$ if and only if $G \subseteq F$  and there exists a retractation from $F$ to $G$.
 \end{proposition}
 
-A core of a factbase $F$ is then one of the smaller retract of $F$:
+A core of a factbase $F$ is then one of the smaller\todo{smallest} retract of $F$:
 
 \begin{definition}
 If a factbase $F$ does not contain a strict retract, then we say that $F$ is a \emph{core}. A \emph{core} of a factbase $F$ (noted \emph{$\textit{core}(F)$}) is a subset of $F$ that is a core.
 \end{definition}
 
+\todo{Intuitivion for the core: the core of $F$ is one of the smallest sets of factst that is as strong as $F$.}
 The cores of a finite factbase F are unique up to isomorphism. Hence, we speak of ``the'' core of a factbase.
 
 The factbase $G = \{B(x,y),R(y,z)\}$ is the core of $F = \{B(x,y),R(y,z),$ $B(x,w),R(w,z)\}$ because:
@@ -272,7 +273,7 @@ Note that $ \{B(x,w),R(w,z)\}$ is also the core of $F$ and is indeed isomorphic 
 An existential rule is a formula of the form $A \rightarrow B$, more exactly:
 
 \begin{definition}
-Let $\vec x$, $\vec y$, and $\vec z$ be some tuples of variables that are pairwise disjoint. An \emph{(existential) rule} $\alpha$ is a first-order formula	of the form $$\forall \vec x.\forall \vec y.( A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z))$$ where $A$ and $B$ are conjunctions of atoms. We define \emph{$\textit{body}(\alpha)$} = $A$ and \emph{$\textit{head}(\alpha)$}~=~$B$.
+Let $\vec x$, $\vec y$, and $\vec z$ be some tuples of variables that are pairwise disjoint. An \emph{(existential) rule} $\alpha$ is a first-order formula	of the form $$\forall \vec x.\forall \vec y.( A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z))$$\todo{Define the notation $A(\vec x,\vec y)$.} where $A$ and $B$ are conjunctions of atoms. We define \emph{$\textit{body}(\alpha)$} = $A$ and \emph{$\textit{head}(\alpha)$}~=~$B$.
 \end{definition}
 We omit the universal quantifiers when representing existential rules. A knowledge base represents then a set of rules and a set of facts:
 
@@ -289,10 +290,10 @@ A factbase $F$ \emph{entails} a rule $\alpha = A(\vec x,\vec y) \rightarrow \exi
 \end{theorem}
 
 \begin{definition}[Model and universality]
-A factbase $M$ is a \emph{model} for a knowledge base $K = (R,F)$ if $M \models F$ and $M \models R$. The factbase $U$ is \emph{universal} for $K$ if for every model $M$ of $K$, $M \models U$. The factbase $M$ is an \emph{universal model} for $K$ if $M$ is a model for $K$ and $M$ is universal for $K$.
+A factbase $M$ is a \emph{model} for a knowledge base $K = (R,F)$ if $M \models F$ and $M \models R$. The factbase $U$ is \emph{universal} for $K$ if for every model $M$ of $K$, $M \models U$. The factbase $M$ is an \emph{universal model} for $K$ if $M$ is a model for $K$ and $M$ is universal for $K$.\todo{Pull this sentence out of the definition and write: We often talk of universal models of a knowledge base $K$; that is, factbases that are both a model and universal for $K$.}
 \end{definition}
 
-For example, if we pose $K = (\{\alpha = A(x) \rightarrow \exists z.R(x,z) \wedge A(z)\},\{A(b)\})$, then an universal model for $K$ is $$U = \{A(b),R(b,x_0)\}\cup \{A(x_i)\mid i \in \N\}\cup \{R(x_i,x_{i+1}) \mid i \in \N\}$$ Note that the knowledge base $K$ does not admit finite universal models.
+For example, if we pose $K = (\{\alpha = A(x) \rightarrow \exists z.R(x,z) \wedge A(z)\},\{A(b)\})$, then an universal model for $K$ is $$U = \{A(b),R(b,x_0)\}\cup \{A(x_i)\mid i \in \N\}\cup \{R(x_i,x_{i+1}) \mid i \in \N\}$$ Note that the knowledge base $K$ does not admit finite universal models.\todo{I would put this in an example environment.}
 
 
 \begin{definition}[Entailment]
@@ -305,7 +306,7 @@ We can use universal models to solve the conjunctive query entailment:
 A knowledge base $K$ entails a factbase $B$ if there exists a universal model $U$ for $K$ such that $U \models B$.
 \end{proposition}
 
-An important problem that this document has to deal with is: Given a knowledge base $K=(R,F)$ and a factbase $Q$,  does $K \models Q$? It  is  well-known  that  this  problem  is  undecidable (\cite{NP2}, theorem 4). 
+An important problem that this document has\todo{that we want to solve is} to deal with is: Given a knowledge base $K=(R,F)$ and a factbase $Q$,  does $K \models Q$? It  is  well-known  that  this  problem  is  undecidable (\cite{NP2}, theorem 4). 
 
 
 
@@ -317,7 +318,7 @@ The process of applying rules on a factbase in order to infer more knowledge is 
 Let $T$ be a rule set, $\alpha$ be a rule, $\sigma$ be a substitution, and $F$ be a factbase. The tuple $t = (\alpha,\sigma)$ is an \emph{oblivious trigger} for $F$ if: 
 \begin{itemize}
 \item the domain of $\sigma$ is the set of all variables occurring in $Body(\alpha)$.
-\item $\sigma$ is a homomorphism from $Body(\alpha))$ to $F$.
+\item $\sigma$ is a homomorphism from $Body(\alpha)$ to $F$.
 \end{itemize}
 In this case, we say that $t$ is \emph{applicable} on $F$.
 
@@ -328,16 +329,16 @@ The tuple $t = (\alpha,\sigma)$ is a \emph{restricted trigger} for $F$ if $t$ is
 
 Notice that a restricted trigger is also an oblivious trigger. We will use the term \emph{trigger} to talk about the oblivous and the restricted trigger.
 
-The chase will considere triggers to infer new knowledge from an initial factbase. We explain now how it would apply a trigger, giving rise to the notion of application. 
+The chase considers triggers to infer new knowledge from an initial factbase. We explain now how it would apply a trigger, giving rise to the notion of application. 
 
 \begin{definition}[application]
-For a trigger $t = (\alpha,\sigma)$ for the factbase $F$ where $\alpha$ is of the form $A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$, we pose \emph{$\sigma^s$} the substitution that extends $\sigma$ over $\Vars(\textit{Head}(\alpha))$ such that for $z \in \vec z$, $\sigma^s(z) = f^z_\alpha(\sigma(\vec x))$ where $f^z_\alpha(\sigma(\vec x))$ is a fresh variable unique with respect to the trigger $t$ and the variable $z$.
+For a trigger $t = (\alpha,\sigma)$ for the factbase $F$ where $\alpha$ is of the form $A(\vec x,\vec y) \rightarrow \exists \vec z. B(\vec x,\vec z)$, we pose \emph{$\sigma^s$} the substitution that extends $\sigma$ over $\Vars(\textit{Head}(\alpha))$ such that for $z \in \vec z$, $\sigma^s(z) = f^z_\alpha(\sigma(\vec x))$ where $f^z_\alpha(\sigma(\vec x))$ is a fresh variable unique with respect to the trigger $t$ and the variable $z$.\todo{Briefly explain that we use a naming convention that resembles function symbols because this is more convenient for us.}
 The factbase $\Appl(F,t)=F \cup \sigma^s(\textit{Head}(\alpha))$ is called an \emph{application} on the factbase $F$ through the trigger $t = (\alpha,\sigma)$. We say that the trigger $t$ is \emph{useless} on $F$ if $\Appl(F,t) = F$.
 \end{definition}
 
 For example, if $\alpha = A(x,y) \rightarrow \exists z.B(x,z)$, $F = \{A(b,c)\}$, and $\sigma = \{x \mapsto b, y \mapsto c \}$, then $(\alpha,\sigma)$ is a restricted trigger for $F$. We have $$\Appl(F,(\alpha,\sigma)) = \{A(b,c),B(b,f_{\alpha}^z(b,c)\}$$
 
-A sequence of rule applications is called a derivation. In this paper, we differentiate oblivious derivation and restricted derivation:
+A sequence of rule applications is called a derivation. In this paper, we differentiate \todo{between} oblivious derivations and restricted derivations:
 
 \begin{definition}[Derivation]
 An \emph{oblivious derivation} (respectively a \emph{restricted derivation}) for a knowledge base $K= (F,R)$ is a (possibly infinite) sequence $D=F_0,t_1,F_1,t_2,F_2,\ldots$ where 
@@ -355,17 +356,17 @@ A fair derivation garantees that we consider every possible application:
 The oblivious (resp. restricted) derivation $D=F_0,t_1,F_1,t_2,F_2,\ldots$ is \emph{fair} if for every $i$ and every oblivious (resp. restricted) trigger $t$ for $F_i$, there exists $k \geq i$ such that $t$ is useless on $F_k$ (resp. $t$ is not anymore a restricted trigger for $F_k$).
 \end{definition}
 
-We will now define the oblivious and restricted chase, It is defined in \cite{obl_res}.
+We will now define the oblivious and restricted chase, which are also defined in \cite{obl_res}.
 
 
 \begin{definition}
-An \emph{oblivious chase} (resp. a restricted chase) for a knowledge base $K= (F,R)$ is a fair oblivious (resp. restricted) derivation $D=F_0,t_1,F_1,t_2,F_2,\ldots$ 
+An \emph{oblivious chase} (resp. a restricted chase) for a knowledge base $K= (F,R)$ is a fair oblivious (resp. restricted) derivation $D=F_0,t_1,F_1,t_2,F_2,\ldots$ \todo{I would merge the previous 2 definitions.}
 \end{definition}
 
 For every oblivious chase $D = F_0,t_1,F_1,t_2,F_2,\ldots$ for $K$, we have $F_0 \subseteq F_1 \subseteq F_2 \subseteq \ldots$. T
-, and the result of an oblivious chase does not depend on the derivation $D$ so we can pose \emph{$\textit{Obl(K)}$} = $\cup_{i \in \N}F_i$. We say that the oblivious chase \emph{terminates} if $\textit{Obl(K)}$ is finite.
+, and the result of an oblivious chase does not depend on the derivation $D$ so we can pose \emph{$\textit{Obl(K)}$} = $\cup_{i \in \N}F_i$.\todo{Argue a bit why this is the case; one line suffices.} We say that the oblivious chase \emph{terminates} if $\textit{Obl(K)}$ is finite.
 
-It is well known that:
+It is well known that:\todo{Remove one line paragraphs.}
 
 \begin{theorem}
 For a knowledge base $K$, $\textit{Obl}(K)$ is an universal model of $K$.
@@ -378,7 +379,7 @@ For a knowledge base $K$ and for every $U \in \textit{Res}(K)$, $U$ is an univer
 \end{theorem}
 
 
-The oblivious chase  can do a lot of applications that are useless: 
+The oblivious chase  can do a lot of applications that are useless: \todo{We present an example to showcase that the restricted chase may terminate even when the oblivivious chase does not:}
 \begin{example}
 Suppose that we have the knowledge base $K=(\{\alpha  = A(x,y) \rightarrow \exists z.A(y,z) \wedge A(z,y)\},\{A(a,b)\})$. An oblivious chase derivation is $F_0,t_1,F_1,t_2,F_2,...$ where
 \begin{itemize}
@@ -393,19 +394,19 @@ It will never terminate because each new atom brings new rule applications. So t
 \end{example}
 
 
-It is well known that:
+It is well known that:\todo{This theorem follows from results in this paper; state that this is the case and reference these results.}
 
 \begin{theorem}
 A knowledge base $K$ entails a factbase $B$ if $\textit{Obl}(K) \models B$ or if there exists $U \in \textit{Res}(K)$ such that $U \models B$. Conversely, if a knowledge base $K$ entails a factbase $B$, then $\textit{Obl}(K) \models B$ and for every $U \in \textit{Res}(K)$, $U \models B$
 \end{theorem}
 
 
-The core chase has been firstly defined in \cite{core_chase}.
+The core chase has been firstly defined in \cite{core_chase}.\todo{Briefly explain why do we care about the core chase: it terminates more often.}
 
 \begin{definition}[Core derivation and fairness]
 A \emph{core derivation} for a knowledge base $K = (R,F)$ is a (possibly infinite) sequence $D = F_0, F_1, F_2, \ldots$ where $F_0 = F$, and for $i >0$, either $F_{i}= \Appl(F_{i-1},t_i)$ is obtained by an application with $t_i$ an oblivious trigger, or $F_i$ is the core of $F_{i-1}$. 
 
-the core derivation $D$ is \emph{fair} if:
+The core derivation $D$ is \emph{fair} if:
 \begin{itemize}
 \item For every $i$, for every oblivious trigger $t$ for $F_i$, there exists $k$ such that $t$ is useless on $F_k$.
 \item For every $i$, there exists $k \geq i$ such that $F_k$ is a core.
@@ -422,7 +423,7 @@ A \emph{core chase} for a knowledge base $K= (R,F)$ is a fair core derivation $D
 The article \cite{core_chase} has proven that the result of the core chase for a knowledge base is unique up to isomorphism. Therefore, we can define the result of the core chase:
 
 \begin{definition}
-If the core chase terminates on $K$ due to the finite core derivation $D=F_0,F_1,F_2,\ldots,F_i$, then we pose \emph{$\textit{C}(K)$} = $F_i$. Otherwise, if the core chase does not terminate, $\textit{C}(K)$ is undefined.
+If the core chase terminates on $K$ due to the finite core derivation $D=F_0,F_1,F_2,\ldots,F_i$, then we pose \emph{$\textit{C}(K)$}\todo{I would write $\textit{Core}(K)$.} = $F_i$. Otherwise, if the core chase does not terminate, $\textit{C}(K)$ is undefined.
 \end{definition}
 
 The following theorem has been proven in (\cite{core_chase}, theorem 7)
@@ -778,12 +779,16 @@ For a factbase $F$ that occurs in a merge chase derivation of some \ALCH\ knowle
 We show that the atomic merge is an operation that preserves the universality thanks to the two next propositions.
 
 \begin{proposition} \label{step1}
-Let $D = F_0,F_1,\ldots,F_m$ be an atomic merge chase derivation of the knowledge base $K$. Let $x$ be mergeable on $t$ in $F_m$. There exists an atomic merge chase derivation $D' = D, F_{m+1}\ldots,F_k$ of $K$ prolonging $D$ such that 
-\begin{itemize}
-\item $F_{m+1}= \Appl(F_m,t_m),\ldots,F_k = \Appl(F_{k-1},t_{k-1})$ have been obtained by a rule application, where $t_m,\ldots,t_{k-1}$ are oblivious triggers,
-\item $F_k = F_m \cup h_{x/t}(\Tree_{F_m}(x))$. 
-\end{itemize}
-We pose \emph{$\Fut(F_m,t,x)$}$=F_k$.
+Let $D = F_0,F_1,\ldots,F_m$ be an atomic merge chase derivation of a knowledge base $K$
+and let $x$ be a variable mergeable on a term $t$ in $F_m$.
+Then, there exists an atomic merge chase derivation $D'$ of the form $D, E$ (where $E$ is a sequence of factbases) such that:
+\begin{enumerate}
+\item Consider some factbase $F \in E$ and its predecessor $G$ in $D'$.
+Then, there is a trigger $t = (\alpha, \sigma)$ such that $\alpha$ is a rule in $K$, $t$ is obliviosly applicable to $E$, and $F = \Appl(G, t)$.
+%\item $F_{m+1}= \Appl(F_m,t_m),\ldots,F_k = \Appl(F_{k-1},t_{k-1})$ have been obtained by a rule application, where $t_m,\ldots,t_{k-1}$ are oblivious triggers,
+\item The last element of $E$ is the factbase $F_m \cup h_{x/t}(\Tree_{F_m}(x))$. 
+\end{enumerate}
+We pose \emph{$\Fut(F_m,t,x) = F_m \cup h_{x/t}(\Tree_{F_m}(x))$}.\todo{This is a definition. Hence it should not be in a proposition environment.}
 \end{proposition}
 
 \begin{figure} \label{proof}
@@ -841,12 +846,20 @@ Graphically, in the Figure \ref{proof}, if we note $A=\Tree_{F_m}(t)$ and $B=\Tr
 To prove the Proposition \ref{step1}, we will look all the triggers dealing with the variables in $\des(x)$ and apply them on the variables in $\des(t)$ if the triggers have not already been applied.
 
 \begin{proof}
-Let $tr_1 = (\alpha_1,\sigma_1),\ldots, tr_n =(\alpha_n,\sigma_n)$ be all the oblivious triggers applied on $F_m$ such that
+In order to define an atomic merge chase sequence such as $D'$, we first introduce some sequences of oblivious triggers:
 \begin{itemize}
-\item the range of each $\sigma_i$ contains only variables in $\des(x)$.
-\item if $F_k = \Appl(F_{k-1},tr_i)$ and $F_l = \Appl(F_{l-1},tr_j)$, where $k<l$, then $i<j$ (that is, $tr_1,\ldots,tr_n$ are oredered by application time).
-\end{itemize} 
-We note $h_{x/t}(tr_i)=(\alpha_i,h_{x/t} \circ \sigma_i)$. Let $t_1,\ldots,t_r$ be the maximal subsequence of  $h_{x/t}(tr_1),\ldots,h_{x/t}(tr_n)$ such that for all $i$, $\Appl(F_{m},t_i) \neq F_{m}$.
+\item Let $t'_1 = (\alpha_1,\sigma_1),\ldots, t'_n =(\alpha_n,\sigma_n)$ be the maximal sequence of oblivious triggers such that:
+(1) for each $1 \leq i \leq n$, there is some $1 \leq j \leq m$ such that $\Appl(F_j, t_i) = F_{j+1}$;
+(2) if $F_k = \Appl(F_{k-1}, t'_i)$ and $F_l = \Appl(F_{l-1},t'_j)$ for some $i, j \in \{1, \ldots, n\}$ and  some $1 \leq k < l \leq m$, then $i<j$; and (3) the range of $\sigma_i$ is a subset of $\des(x)$ for each $1 \leq i \leq n$.
+\item Let $t''_1, \ldots, t''_o$ be the maximal subsequence of $(\alpha_1, h_{x/t} \circ \sigma_1), \ldots, (\alpha_n, h_{x/t} \circ \sigma_n)$ such that $\Appl(F_{m}, t''_i) \neq F_{m}$ for each $1 \leq i \leq o$.
+\end{itemize}
+\todo{It would be good to give intuitive explanations for the above sequences of triggers.}
+Let $F_{m+i} = \Appl(F_{m+i-1}, t''_i)$ for each $1 \leq i \leq o$.
+We show via induction that the sequence $D' = D, F_{m+1}, \ldots, F_{m+o}$ satisfies conditions (1) and (2) stated in the proposition.
+
+
+For each $1 \leq i \leq n$, let $h_{x/t}(t'_i) = (\alpha_i, h_{x/t} \circ \sigma_i)$.
+Let $t_1, \ldots, t_r$ be the maximal subsequence of $h_{x/t}(t'_1), \ldots, h_{x/t}(t'_n)$ such that for all $i$, $\Appl(F_{m}, t_i) \neq F_{m}$.
 
 
 We pose $F_{m+1} = \Appl(F_m,t_1),\ldots, F_{m+r} = \Appl(F_{m+r-1},t_r)$ and for $i \in \{1,\ldots,n\}$, $$B_i' = {h_{x/t} \circ \sigma_1^s}(Head(\alpha_1)) \cup \ldots \cup {h_{x/t} \circ \sigma^s_i}(Head(\alpha_{i}))$$
