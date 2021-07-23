@@ -494,6 +494,12 @@ R(x,y) \wedge B(y) &\rightarrow A(x) \\
 R_1(x,y) \wedge R_2(x,y) &\rightarrow S(x,y)
 \end{align}
 
+\begin{align*}
+A_1(x) \wedge A_2(x) &\rightarrow B(x) & (C_\wedge)&& R(x,y) \wedge B(y) &\rightarrow A(x) & (\exists_-) \\
+A(x) \wedge R(x,y) &\rightarrow B(y)  & (\forall_+) && R_1(x,y) \wedge R_2(x,y) &\rightarrow S(x,y) & (R_\wedge)\\
+A(x) &\rightarrow \exists y.R(x,y) \wedge B(y) & (\exists_+) \label{rule:horn-alc-exist} 
+\end{align*}
+
 
 \todo{Display into 2 columns so it does not take so much vertical space. I tried but I do not succeed to do it with the package multicol}\
 A \emph{\ALCH\ knowledge base} $K = (R,F)$ is a knowledge base where $R$ is a set of \ALCH\ axioms and $F$ contains only predicates of arity one or two. 
